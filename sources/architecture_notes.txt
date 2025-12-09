@@ -1,0 +1,16 @@
+- Currently, assets are identified using their paths as std::strings.
+  This is much slower than using integer IDs and is likely the main performance
+  bottleneck in our ECS stress tests.
+
+- In the test, each player entity had multiple components, most importantly
+  AnimatedDrawable and Drawable components that store many std::string paths.
+  Systems update and assign these strings every frame, leading to high CPU cost.
+
+- Stress test results:
+  - 1 player: silky smooth 60 FPS
+  - 1 onscreen player, 1000 offscreen players: 60 FPS
+  - 1 onscreen player, 5000 offscreen players: 56–60 FPS
+  - 1 onscreen player, 10000 offscreen players: 34–36 FPS
+
+- Note: The ECS architecture itself (sparse set) is performant;
+  the slowdown comes from per-frame string operations in the systems.
