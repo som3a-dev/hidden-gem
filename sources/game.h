@@ -19,10 +19,6 @@ struct Game
 
     int player;
 
-    TextureAnimation animation;
-    Vector2 sprite_pos;
-    float sprite_speed;
-
     void init();
     void destroy();
 

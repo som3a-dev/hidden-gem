@@ -18,13 +18,6 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"knight/knight002.png");
     asset_m.print_texture_table();
 
-    animation.set_frame_interval(50);
-    animation.push_texture(ASSETS_PATH"knight/knight000.png");
-    animation.push_texture(ASSETS_PATH"knight/knight001.png");
-    animation.push_texture(ASSETS_PATH"knight/knight002.png");
-
-    sprite_speed = 3.0f;
-
     create_player();
 }
 
@@ -85,8 +78,6 @@ void Game::update()
 
     transform_update_system(world);
     animated_drawable_system(world);
-
-    animation.update();
 }
 
 void Game::draw()
@@ -96,22 +87,6 @@ void Game::draw()
     ClearBackground(RAYWHITE);
 
     GameplaySystems::render_drawable_system(world, asset_m);
-
-/*    std::string texture_path = animation.get_current_texture();
-    Texture2D* texture = asset_m.get_texture(texture_path);
-    ECS::TransformComponent* player_transform = world.transforms.get_component(player);
-    if (texture && player_transform)
-    {
-        Rectangle src_rect = animation.get_source_rect(*texture);
-        Rectangle dst_rect = {
-                            player_transform->x,
-                            player_transform->y,
-                            static_cast<float>(player_transform->w),
-                            static_cast<float>(player_transform->h)
-                            };
-
-        DrawTexturePro(*texture, src_rect, dst_rect, {0, 0}, 0, WHITE);
-    }*/
 
     EndDrawing();
 }
