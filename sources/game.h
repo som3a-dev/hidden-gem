@@ -2,6 +2,11 @@
 #define _GAME_H
 
 #include "raylib.h"
+#include "asset_manager.h"
+#include "texture_animation.h"
+#include "ecs/world.h"
+
+#include <vector>
 
 struct Game
 {
@@ -9,9 +14,14 @@ struct Game
     int screen_width;
     int screen_height;
 
-    Texture2D texture;
-    Vector2 texture_pos;
-    float texture_speed;
+    AssetManager asset_m;
+    ECS::World world;
+
+    int player;
+
+    TextureAnimation animation;
+    Vector2 sprite_pos;
+    float sprite_speed;
 
     void init();
     void destroy();
@@ -19,6 +29,8 @@ struct Game
     void loop();
     void update();
     void draw();
+
+    void create_player();
 };
 
 #endif

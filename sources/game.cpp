@@ -1,4 +1,7 @@
 #include "game.h"
+#include "gameplay_systems.h"
+
+#include <iostream>
 
 void Game::init()
 {
@@ -8,15 +11,55 @@ void Game::init()
     InitWindow(screen_width, screen_height, "Hidden GEM");
     SetTargetFPS(60);
 
-    texture = LoadTexture(ASSETS_PATH"normal_crate.png"); 
+    asset_m.load_texture(ASSETS_PATH"knight/knight000.png");
+    asset_m.print_texture_table();
+    asset_m.load_texture(ASSETS_PATH"knight/knight001.png");
+    asset_m.print_texture_table();
+    asset_m.load_texture(ASSETS_PATH"knight/knight002.png");
+    asset_m.print_texture_table();
 
-    texture_speed = 3.0f;
+    animation.set_frame_interval(50);
+    animation.push_texture(ASSETS_PATH"knight/knight000.png");
+    animation.push_texture(ASSETS_PATH"knight/knight001.png");
+    animation.push_texture(ASSETS_PATH"knight/knight002.png");
+
+    sprite_speed = 3.0f;
+
+    create_player();
 }
 
 void Game::destroy()
 {
-    UnloadTexture(texture);
     CloseWindow();
+}
+
+void Game::create_player()
+{
+    ECS::TransformComponent transform = {50, 50, 256, 256};
+    ECS::MovementComponent movement;
+    movement.speed = 4.0f;
+
+    ECS::DrawableComponent drawable;
+    drawable.texture_path = ASSETS_PATH"knight/knight002.png";
+    drawable.x = 0;
+    drawable.y = 0;
+    drawable.w = 100;
+    drawable.h = 100;
+
+    ECS::AnimatedDrawableComponent animated_drawable;
+    animated_drawable.anim.set_frame_interval(50);
+    animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight000.png");
+    animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight001.png");
+    animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight002.png");
+
+    ECS::PlayerComponent player_tag;
+
+    player = world.create_entity();
+    world.transforms.add_component(player, transform);
+    world.movements.add_component(player, movement);
+    world.drawables.add_component(player, drawable);
+    world.animated_drawables.add_component(player, animated_drawable);
+    world.players.add_component(player, player_tag);
 }
 
 void Game::loop()
@@ -37,24 +80,13 @@ void Game::update()
         return;
     }
 
-    if (IsKeyDown(KEY_D))
-    {
-        texture_pos.x += texture_speed;
-    }
-    else if (IsKeyDown(KEY_A))
-    {
-        texture_pos.x -= texture_speed;
-    }
+    using namespace GameplaySystems;
+    player_system(world);
 
-    if (IsKeyDown(KEY_S))
-    {
-        texture_pos.y += texture_speed;
-    }
-    else if (IsKeyDown(KEY_W))
-    {
-        texture_pos.y -= texture_speed;
-    }
+    transform_update_system(world);
+    animated_drawable_system(world);
 
+    animation.update();
 }
 
 void Game::draw()
@@ -63,14 +95,24 @@ void Game::draw()
 
     ClearBackground(RAYWHITE);
 
-    DrawTextureEx(texture, texture_pos, 0, 5.0f, WHITE);
+    GameplaySystems::render_drawable_system(world, asset_m);
 
-    const char* text = "Hidden GEM";
-    const Vector2 text_size = MeasureTextEx(GetFontDefault(), text, 20, 1);
-    int text_x = static_cast<int>(screen_width / 2 - text_size.x / 2);
-    int text_y = static_cast<int>(screen_height * 0.6);
+/*    std::string texture_path = animation.get_current_texture();
+    Texture2D* texture = asset_m.get_texture(texture_path);
+    ECS::TransformComponent* player_transform = world.transforms.get_component(player);
+    if (texture && player_transform)
+    {
+        Rectangle src_rect = animation.get_source_rect(*texture);
+        Rectangle dst_rect = {
+                            player_transform->x,
+                            player_transform->y,
+                            static_cast<float>(player_transform->w),
+                            static_cast<float>(player_transform->h)
+                            };
 
-    DrawText(text, text_x, text_y, 20, BLACK);
+        DrawTexturePro(*texture, src_rect, dst_rect, {0, 0}, 0, WHITE);
+    }*/
 
     EndDrawing();
 }
+
