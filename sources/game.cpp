@@ -41,11 +41,11 @@ void Game::create_player(float x, float y)
     drawable.texture_path = ASSETS_PATH"knight/knight002.png";
     drawable.x = 0;
     drawable.y = 0;
-    drawable.w = 100;
-    drawable.h = 100;
+    drawable.w = 200;
+    drawable.h = 200;
 
     ECS::AnimatedDrawableComponent animated_drawable;
-    animated_drawable.anim.set_frame_interval(50);
+    animated_drawable.anim.set_frame_interval(100);
     animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight000.png");
     animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight001.png");
     animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight002.png");
