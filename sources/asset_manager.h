@@ -17,9 +17,6 @@ struct AssetManager
     void print_texture_table() const;
 private:
 
-    // when used == false, accessing any member of an (X)Entry struct (like path)
-    // is undefined behavior, as we use C std functions like calloc
-    // not new and delete, so no constructors get called
     struct TextureEntry
     {
         bool used = false;
