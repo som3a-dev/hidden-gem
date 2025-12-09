@@ -18,7 +18,7 @@ namespace GameplaySystems
     void animated_drawable_system(ECS::World& world);
 
     void render_drawable_system(ECS::World& world, const AssetManager& asset_m);
-    void player_system(ECS::World& world);
+    void player_system(ECS::World& world, float dt);
 };
 
 #endif

@@ -74,7 +74,7 @@ namespace GameplaySystems
         }
     }
 
-    void player_system(ECS::World& world)
+    void player_system(ECS::World& world, float dt)
     {
         for (int entity : world.players.entities)
         {
@@ -90,22 +90,22 @@ namespace GameplaySystems
 
             if (IsKeyDown(KEY_D))
             {
-                transform->x += movement->speed;
+                transform->x += movement->speed * dt;
                 animated_drawable->anim.flip_h = false;
             }
             else if (IsKeyDown(KEY_A))
             {
-                transform->x -= movement->speed;
+                transform->x -= movement->speed * dt;
                 animated_drawable->anim.flip_h = true;
             }
 
             if (IsKeyDown(KEY_S))
             {
-                transform->y += movement->speed;
+                transform->y += movement->speed * dt;
             }
             else if (IsKeyDown(KEY_W))
             {
-                transform->y -= movement->speed;
+                transform->y -= movement->speed * dt;
             }
         }
     }

@@ -16,6 +16,7 @@ struct Game
 
     AssetManager asset_m;
     ECS::World world;
+    float dt; // delta time in ms
 
     int player;
 
@@ -26,7 +27,7 @@ struct Game
     void update();
     void draw();
 
-    void create_player();
+    void create_player(float x, float y);
 };
 
 #endif
