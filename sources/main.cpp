@@ -1,7 +1,6 @@
 #define _CRTDBG_MAP_ALLOC
 
 #include "game.h"
-#include "ecs/world.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -13,43 +12,6 @@ static int run()
     game.init();
     game.loop();
     game.destroy();
-
-/*    using namespace ECS;
-    SparseSet<TransformComponent> set;
-
-    {
-    TransformComponent transform;
-    set.add_component(1, transform);
-    set.add_component(58, transform);
-    set.add_component(1005, transform);
-    }
-
-    int entity = 1005;
-    TransformComponent* transform = set.get_component(entity);
-
-    if (transform)
-    {
-        printf("Entity %d has transform %f, %f\n", entity,
-        transform->x, transform->y);
-    }
-    else
-    {
-        printf("Entity %d has no transform\n", entity);
-    }
-
-    set.remove_component(entity);
-
-    transform = set.get_component(entity);
-
-    if (transform)
-    {
-        printf("Entity %d has transform %f, %f\n", entity,
-        transform->x, transform->y);
-    }
-    else
-    {
-        printf("Entity %d has no transform\n", entity);
-    }*/
 
     return 0;
 }
@@ -74,4 +36,4 @@ int main(void)
 
 //NEXT(): Animation, Animated sprite (DONE)
 //NEXT(): Asset loading and retrieving (DONE)
-//NEXT(): ECS
+//NEXT(): ECS (DONE)
