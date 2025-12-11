@@ -8,17 +8,20 @@
 
 #include "asset_manager.h"
 #include "ecs/world.h"
+#include "tilemap.h"
+#include "game.h"
 
 namespace GameplaySystems
 {
-    // Updates any entities with a drawable
-    // and a transform (sets the position of the drawable to match the transform)
     void transform_update_system(ECS::World& world);
 
-    void animated_drawable_system(ECS::World& world);
+    void movement_update_system(ECS::World& world, const Game& game, const Tilemap& tilemap);
+
+    void animated_drawable_system(ECS::World& world, const AssetManager& asset_m);
+
 
     void render_drawable_system(ECS::World& world, const AssetManager& asset_m);
-    void player_system(ECS::World& world, float dt);
+    void player_system(ECS::World& world);
 };
 
 #endif

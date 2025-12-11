@@ -5,6 +5,7 @@
 #include "asset_manager.h"
 #include "texture_animation.h"
 #include "ecs/world.h"
+#include "tilemap.h"
 
 #include <vector>
 
@@ -14,9 +15,17 @@ struct Game
     int screen_width;
     int screen_height;
 
+    bool debug_draw = false;
+
     AssetManager asset_m;
+
     ECS::World world;
+    Tilemap tilemap;
+    int tile_width;
+    int tile_height;
+
     float dt; // delta time in ms
+    float gravity;
 
     int player;
 
@@ -27,6 +36,7 @@ struct Game
     void update();
     void draw();
 
+    void create_tile(float x, float y);
     void create_player(float x, float y);
 };
 
