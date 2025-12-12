@@ -13,14 +13,14 @@
 
 namespace GameplaySystems
 {
-    void transform_update_system(ECS::World& world);
+    void transform_update_system(ECS::World& world, const Game& game);
 
-    void movement_update_system(ECS::World& world, const Game& game, const Tilemap& tilemap);
+    void collision_update_system(ECS::World& world, const Game& game, const Tilemap& tilemap);
 
     void animated_drawable_system(ECS::World& world, const AssetManager& asset_m);
 
-
     void render_drawable_system(ECS::World& world, const AssetManager& asset_m);
+
     void player_system(ECS::World& world);
 };
 

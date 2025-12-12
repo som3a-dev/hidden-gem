@@ -2,6 +2,7 @@
 #include "gameplay_systems.h"
 
 #include <iostream>
+#include <fstream>
 #include <utility>
 
 void Game::init()
@@ -24,10 +25,12 @@ void Game::init()
 
     tilemap.create(screen_width / tile_width, screen_height / tile_height);
 
-    for (int i = 0; i < tilemap.get_width(); i++)
+/*    for (int i = 0; i < tilemap.get_width(); i++)
     {
         tilemap.set_tile(i, tilemap.get_height() - 3, 1);
-    }
+    }*/
+
+    load_tilemap(ASSETS_PATH"map.txt");
 
     create_player(100, 100);
 }
@@ -40,7 +43,7 @@ void Game::destroy()
 void Game::create_player(float x, float y)
 {
     ECS::MovementComponent movement;
-    movement.speed = 0.5f;
+    movement.speed = 0.3f;
     movement.gravity = gravity * 2;
 
     ECS::DrawableComponent drawable;
@@ -55,10 +58,12 @@ void Game::create_player(float x, float y)
     transform.w = (int)(base_texture->width  * drawable.scale);
     transform.h = (int)(base_texture->height * drawable.scale);
 
+    ECS::CollisionComponent collision;
+
     ECS::AnimatedDrawableComponent animated_drawable;
     animated_drawable.anim.set_frame_interval(100);
     animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight000.png");
-    animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight001.png");
+//    animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight001.png");
 
     ECS::PlayerComponent player_component;
     player_component.accel = 0.03f;
@@ -69,6 +74,8 @@ void Game::create_player(float x, float y)
     world.transforms.add_component(player, std::move(transform));
 
     world.movements.add_component(player, std::move(movement));
+
+    world.collisions.add_component(player, std::move(collision));
 
     world.drawables.add_component(player, std::move(drawable));
 
@@ -105,8 +112,8 @@ void Game::update()
     using namespace GameplaySystems;
     player_system(world);
 
-    movement_update_system(world, *this, tilemap);
-    transform_update_system(world);
+    collision_update_system(world, *this, tilemap);
+    transform_update_system(world, *this);
     animated_drawable_system(world, asset_m);
 }
 
@@ -163,4 +170,29 @@ void Game::draw()
 
     EndDrawing();
 }
+
+void Game::load_tilemap(const std::string& filepath)
+{
+    std::ifstream stream(filepath);
+    
+    std::string line;
+    int x = 0;
+    int y = 0;
+    while (getline(stream, line))
+    {
+        std::cout << line << std::endl;
+        for (char tile : line)
+        {
+            if (tile == '1')
+            {
+                tilemap.set_tile(x, y, 1);
+            }
+
+            x++;
+        }
+        y++;
+        x = 0;
+    }
+}
+
 

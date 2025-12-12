@@ -1,6 +1,7 @@
 #ifndef _ECS_WORLD
 #define _ECS_WORLD
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -38,7 +39,17 @@ namespace ECS
         float gravity = 0;
 
         Vector2 velocity = {0};
+    };
+
+    struct CollisionComponent
+    {
         bool on_ground = false;
+
+        // Used by the system
+
+        // we handle only the first collision for now
+        static constexpr int _max_colliding_tiles = 1;
+        std::array<Rectangle, _max_colliding_tiles> _colliding_tiles;
     };
 
     struct DrawableComponent 
@@ -64,7 +75,7 @@ namespace ECS
     {
         float accel = 0;
         float friction = 0;
-        float jump_force;
+        float jump_force = 0;
     };
 
     struct World
@@ -74,6 +85,8 @@ namespace ECS
         SparseSet<TransformComponent> transforms;
 
         SparseSet<MovementComponent> movements;
+
+        SparseSet<CollisionComponent> collisions;
 
         SparseSet<DrawableComponent> drawables;
 

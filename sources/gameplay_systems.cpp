@@ -1,4 +1,5 @@
 #include "gameplay_systems.h"
+#include "collision.h"
 
 #include <iostream>
 #include <math.h>
@@ -9,12 +10,19 @@ using namespace ECS;
 
 namespace GameplaySystems
 {
-    void transform_update_system(ECS::World& world)
+    void transform_update_system(ECS::World& world, const Game& game)
     {
         for (int entity : world.transforms.entities)
         {
             TransformComponent* transform = world.transforms.get_component(entity);
             DrawableComponent* drawable = world.drawables.get_component(entity);
+            MovementComponent* movement = world.movements.get_component(entity);
+
+            if (movement)
+            {
+                transform->x += movement->velocity.x * game.dt;
+                transform->y += movement->velocity.y * game.dt;
+            }
 
             if (drawable)
             {
@@ -24,123 +32,73 @@ namespace GameplaySystems
         }
     }
 
-    void movement_update_system(ECS::World& world, const Game& game, const Tilemap& tilemap)
+    void collision_update_system(ECS::World& world, const Game& game, const Tilemap& tilemap)
     {
-        for (int entity : world.movements.entities)
+        for (int entity : world.collisions.entities)
         {
+            CollisionComponent* collision = world.collisions.get_component(entity);
+
             MovementComponent* movement = world.movements.get_component(entity);
-            (void)movement;
-
+            if (movement == nullptr) continue;
             TransformComponent* transform = world.transforms.get_component(entity);
-
             if (transform == nullptr) continue;
 
             Rectangle entity_rect = transform->get_rect();
-            
-            transform->x += movement->velocity.x * game.dt;
 
-            //Check for x collision
-            if (movement->velocity.x)
+            entity_rect.x += movement->velocity.x * game.dt;
+            int collision_count = Collision::get_colliding_tiles(game, tilemap, entity_rect,
+                                           collision->_colliding_tiles.data(),
+                                           collision->_colliding_tiles.size());
+
+//            for (Rectangle& tile_rect : collision->_colliding_tiles)
+            for (int i = 0; i < collision_count; i++)
             {
-                for (int tile_y = 0; tile_y < tilemap.get_height(); tile_y++)
+                Rectangle& tile_rect = collision->_colliding_tiles[i];
+
+                float tile_center_x = tile_rect.x + (tile_rect.width / 2);
+                float entity_center_x = entity_rect.x + (entity_rect.width / 2);
+
+                if (entity_center_x < tile_center_x)
                 {
-                    for (int tile_x = 0; tile_x < tilemap.get_width(); tile_x++)
-                    {
-                        if (tilemap.get_tile(tile_x, tile_y) == EMPTY_TILE)
-                        {
-                            continue;
-                        }
-
-                        Rectangle tile_rect = {
-                            (float)(tile_x) * game.tile_width,
-                            (float)(tile_y) * game.tile_height,
-                            (float)(game.tile_width),
-                            (float)(game.tile_height)
-                        };
-
-                        if (CheckCollisionRecs(tile_rect, entity_rect))
-                        {
-                            float x_overlap = __min(entity_rect.x + entity_rect.width,
-                                tile_rect.x + tile_rect.width) - __max(entity_rect.x, tile_rect.x);
-
-                            float y_overlap = __min(entity_rect.y + entity_rect.height,
-                                tile_rect.y + tile_rect.height) - __max(entity_rect.y, tile_rect.y);
-
-                            std::cout << x_overlap << ", " << y_overlap << std::endl;
-                            
-                            if (y_overlap > x_overlap)
-                            {
-                                if (movement->velocity.x > 0)
-                                {
-                                    transform->x = tile_rect.x + transform->w;
-                                }
-                                else if (movement->velocity.x < 0)
-                                {
-                                    transform->x = tile_rect.x + tile_rect.width;
-                                }
-                            }
-
-                            goto y_collision_check;
-                        }
-                    }
+                    transform->x = tile_rect.x - transform->w;
                 }
+                else if (tile_center_x < entity_center_x)
+                {
+                    transform->x = tile_rect.x + tile_rect.width;
+                }
+
+                movement->velocity.x = 0;
+                break;
             }
 
-            y_collision_check:
+            entity_rect.x = transform->x; // Check the actual current x position, in case we snapped
 
-            transform->y += movement->velocity.y * game.dt;
-            //Check for y collision
-            if (movement->velocity.y)
+            entity_rect.y += movement->velocity.y * game.dt;
+            collision_count = Collision::get_colliding_tiles(game, tilemap, entity_rect,
+                                           collision->_colliding_tiles.data(),
+                                           collision->_colliding_tiles.size());
+
+            collision->on_ground = false;
+            for (int i = 0; i < collision_count; i++)
             {
-                movement->on_ground = false; // gets set to false at the start, true by the end if still on ground this frame
+                Rectangle& tile_rect = collision->_colliding_tiles[i];
 
-                for (int tile_y = 0; tile_y < tilemap.get_height(); tile_y++)
+                float tile_center_y = tile_rect.y + (tile_rect.height / 2);
+                float entity_center_y = entity_rect.y + (entity_rect.height / 2);
+
+                if (tile_center_y < entity_center_y)
                 {
-                    for (int tile_x = 0; tile_x < tilemap.get_width(); tile_x++)
-                    {
-                        if (tilemap.get_tile(tile_x, tile_y) == EMPTY_TILE)
-                        {
-                            continue;
-                        }
-
-                        Rectangle tile_rect = {
-                            (float)(tile_x) * game.tile_width,
-                            (float)(tile_y) * game.tile_height,
-                            (float)(game.tile_width),
-                            (float)(game.tile_height)
-                        };
-
-                        if (CheckCollisionRecs(tile_rect, entity_rect))
-                        {
-                            float x_overlap = __min(entity_rect.x + entity_rect.width,
-                                tile_rect.x + tile_rect.width) - __max(entity_rect.x, tile_rect.x);
-
-                            float y_overlap = __min(entity_rect.y + entity_rect.height,
-                                tile_rect.y + tile_rect.height) - __max(entity_rect.y, tile_rect.y);
-
-                            std::cout << x_overlap << ", " << y_overlap << std::endl;
-                            
-                            if (x_overlap > y_overlap)
-                            {
-                                if (movement->velocity.y < 0)
-                                {
-                                    transform->y = tile_rect.y + transform->h;
-                                }
-                                else if (movement->velocity.y > 0)
-                                {
-                                    transform->y = tile_rect.y - transform->h;
-                                    movement->on_ground = true;
-                                }
-                            }
-
-                            goto collision_check_done;
-                        }
-                    }
+                    transform->y = tile_rect.y + tile_rect.height;
                 }
-            }
+                else if (entity_center_y < tile_center_y)
+                {
+                    transform->y = tile_rect.y - transform->h;
+                    collision->on_ground = true;
+                }
 
-            collision_check_done:
-            return;
+                movement->velocity.y = 0;
+                break;
+            }
         }
     }
 
@@ -211,6 +169,9 @@ namespace GameplaySystems
             MovementComponent* movement = world.movements.get_component(entity);
             if (movement == nullptr) continue;
 
+            CollisionComponent* collision = world.collisions.get_component(entity);
+            if (collision == nullptr) continue;
+
             AnimatedDrawableComponent* animated_drawable =
             world.animated_drawables.get_component(entity);
             if (animated_drawable == nullptr) continue;
@@ -219,7 +180,7 @@ namespace GameplaySystems
             if (drawable == nullptr) continue;
 
             // Gravity
-            if (movement->on_ground == false)
+            if (collision->on_ground == false)
             {
                 movement->velocity.y += movement->gravity;
             }
@@ -266,6 +227,12 @@ namespace GameplaySystems
             if (IsKeyPressed(KEY_SPACE))
             {
                 movement->velocity.y = -(player->jump_force);
+            }
+
+            if (IsKeyPressed(KEY_K))
+            {
+                transform->x = 100;
+                transform->y = 100;
             }
         }
     }
