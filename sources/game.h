@@ -35,6 +35,7 @@ struct Game
     void loop();
     void update();
     void draw();
+    void draw_tilemap();
 
     void create_tile(float x, float y);
     void create_player(float x, float y);

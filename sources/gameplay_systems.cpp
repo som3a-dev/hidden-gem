@@ -120,7 +120,7 @@ namespace GameplaySystems
                 drawable->flip_h = animated_drawable->anim.flip_h;
                 drawable->flip_v = animated_drawable->anim.flip_v;
 
-                Texture2D* texture = asset_m.get_texture(drawable->texture_path);
+                Texture2D* texture = asset_m.get_asset<Texture2D>(drawable->texture_path);
                 drawable->w = texture->width;
                 drawable->h = texture->height;
             }
@@ -132,7 +132,7 @@ namespace GameplaySystems
         for (DrawableComponent& drawable : world.drawables.components)
         {
 //            std::cout << "Draw " << drawable.texture_path << std::endl;
-            Texture2D* texture = asset_m.get_texture(drawable.texture_path);
+            Texture2D* texture = asset_m.get_asset<Texture2D>(drawable.texture_path);
 
             if (texture == nullptr) continue;
 

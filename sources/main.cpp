@@ -37,3 +37,5 @@ int main(void)
 //NEXT(): Animation, Animated sprite (DONE)
 //NEXT(): Asset loading and retrieving (DONE)
 //NEXT(): ECS (DONE)
+//NEXT(): COLLISION (DONE)
+//NEXT(): Spritesheet loading

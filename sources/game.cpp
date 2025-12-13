@@ -20,6 +20,7 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"knight/knight000.png");
     asset_m.load_texture(ASSETS_PATH"knight/knight001.png");
     asset_m.load_texture(ASSETS_PATH"knight/knight002.png");
+    asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png");
 
     asset_m.print_texture_table();
 
@@ -54,16 +55,19 @@ void Game::create_player(float x, float y)
 //    drawable.h = 64;
 
     ECS::TransformComponent transform(x, y, 64, 64);
-    Texture2D* base_texture = asset_m.get_texture(ASSETS_PATH"knight/knight000.png");
-    transform.w = (int)(base_texture->width  * drawable.scale);
-    transform.h = (int)(base_texture->height * drawable.scale);
+    Texture2D* base_texture = asset_m.get_asset<Texture2D>(ASSETS_PATH"knight/knight000.png");
+    if (base_texture)
+    {
+        transform.w = (int)(base_texture->width  * drawable.scale);
+        transform.h = (int)(base_texture->height * drawable.scale);
+    }
 
     ECS::CollisionComponent collision;
 
     ECS::AnimatedDrawableComponent animated_drawable;
     animated_drawable.anim.set_frame_interval(100);
     animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight000.png");
-//    animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight001.png");
+//    animated_drawable.anim.push_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png");
 
     ECS::PlayerComponent player_component;
     player_component.accel = 0.03f;
@@ -123,7 +127,29 @@ void Game::draw()
 
     ClearBackground({60, 60, 60, 255});
 
-    // Draw tilemap
+    draw_tilemap();
+
+    GameplaySystems::render_drawable_system(world, asset_m);
+
+    if (debug_draw)
+    {
+        ECS::TransformComponent* player_transform = world.transforms.get_component(player);
+        if (player_transform)
+        {
+            DrawRectangleLinesEx(player_transform->get_rect(), 2, RED);
+        }
+    }
+
+    int fps = GetFPS();
+    char buf[12];
+    snprintf(buf, sizeof(buf), "%d", fps);
+    DrawText(buf, 0, 0, 24, RED);
+
+    EndDrawing();
+}
+
+void Game::draw_tilemap()
+{
     for (int tile_y = 0; tile_y < tilemap.get_height(); tile_y++)
     {
         for (int tile_x = 0; tile_x < tilemap.get_width(); tile_x++)
@@ -151,24 +177,6 @@ void Game::draw()
             }
         }
     }
-
-    GameplaySystems::render_drawable_system(world, asset_m);
-
-    if (debug_draw)
-    {
-        ECS::TransformComponent* player_transform = world.transforms.get_component(player);
-        if (player_transform)
-        {
-            DrawRectangleLinesEx(player_transform->get_rect(), 2, RED);
-        }
-    }
-
-    int fps = GetFPS();
-    char buf[12];
-    snprintf(buf, sizeof(buf), "%d", fps);
-    DrawText(buf, 0, 0, 24, RED);
-
-    EndDrawing();
 }
 
 void Game::load_tilemap(const std::string& filepath)
