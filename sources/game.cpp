@@ -15,7 +15,7 @@ void Game::init()
     gravity = 0.01f;
     
     InitWindow(screen_width, screen_height, "Hidden GEM");
-    SetTargetFPS(70);
+    SetTargetFPS(60);
     
     asset_m.load_texture(ASSETS_PATH"knight/knight000.png");
     asset_m.load_texture(ASSETS_PATH"knight/knight001.png");
@@ -43,31 +43,58 @@ void Game::destroy()
 
 void Game::create_player(float x, float y)
 {
+    {
+        FrameAnimation anim;
+        anim.set_sheet(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png", asset_m, 8, 8);
+        anim.frames.push_back({0, 2});
+        anim.frames.push_back({1, 2});
+        anim.frames.push_back({2, 2});
+        anim.frames.push_back({3, 2});
+        anim.frames.push_back({4, 2});
+        anim.frames.push_back({5, 2});
+        anim.frames.push_back({6, 2});
+        anim.frames.push_back({7, 2});
+
+        anim.interval_ms = 70;
+        anim.collision_rect = {
+            9, 8,
+            15, 20
+        };
+
+        asset_m.load_frame_animation("knight_walk", std::move(anim));
+    }
+    {
+        FrameAnimation anim;
+        anim.set_sheet(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png", asset_m, 8, 8);
+        anim.frames.push_back({0, 0});
+        anim.frames.push_back({1, 0});
+//        anim.frames.push_back({2, 0});
+//        anim.frames.push_back({3, 0});
+
+        anim.interval_ms = 300;
+        anim.collision_rect = {
+            9, 8,
+            15, 20
+        };
+
+        asset_m.load_frame_animation("knight_idle", std::move(anim));
+    }
+
+    ECS::DrawableComponent drawable;
+    drawable.scale = 5;
+
+    ECS::TransformComponent transform = {x, y};
+
     ECS::MovementComponent movement;
     movement.speed = 0.3f;
     movement.gravity = gravity * 2;
 
-    ECS::DrawableComponent drawable;
-    drawable.x = 0;
-    drawable.y = 0;
-    drawable.scale = 5;
-//    drawable.w = 64;
-//    drawable.h = 64;
-
-    ECS::TransformComponent transform(x, y, 64, 64);
-    Texture2D* base_texture = asset_m.get_asset<Texture2D>(ASSETS_PATH"knight/knight000.png");
-    if (base_texture)
-    {
-        transform.w = (int)(base_texture->width  * drawable.scale);
-        transform.h = (int)(base_texture->height * drawable.scale);
-    }
-
     ECS::CollisionComponent collision;
+    collision.rect.width = 60; // default/fallback size
+    collision.rect.height = 80;
 
     ECS::AnimatedDrawableComponent animated_drawable;
-    animated_drawable.anim.set_frame_interval(100);
-    animated_drawable.anim.push_texture(ASSETS_PATH"knight/knight000.png");
-//    animated_drawable.anim.push_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png");
+    animated_drawable.animation_id = "knight_idle";
 
     ECS::PlayerComponent player_component;
     player_component.accel = 0.03f;
@@ -134,9 +161,37 @@ void Game::draw()
     if (debug_draw)
     {
         ECS::TransformComponent* player_transform = world.transforms.get_component(player);
-        if (player_transform)
+        ECS::CollisionComponent* player_collision = world.collisions.get_component(player);
+
+        if (player_transform && player_collision)
         {
-            DrawRectangleLinesEx(player_transform->get_rect(), 2, RED);
+            Rectangle rect = {
+                player_transform->x + player_collision->rect.x,
+                player_transform->y + player_collision->rect.y,
+                player_collision->rect.width,
+                player_collision->rect.height
+            };
+            DrawRectangleLinesEx(rect, 2, RED);
+        }
+    }
+
+    FrameAnimation* anim = asset_m.get_asset<FrameAnimation>("knight_walk");
+
+    if (anim)
+    {
+        anim->update();
+
+        Rectangle src = anim->get_current_frame_src();
+        Rectangle dst = {
+            100, 100,
+            src.width * 4, src.height * 4
+        };
+
+        Texture2D* sheet = asset_m.get_asset<Texture2D>(anim->get_sheet());
+
+        if (sheet)
+        {
+            DrawTexturePro(*sheet, src, dst, {0, 0}, 0, WHITE);
         }
     }
 

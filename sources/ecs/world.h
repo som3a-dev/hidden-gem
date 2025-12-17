@@ -7,30 +7,21 @@
 
 #include "raylib.h"
 #include "sparse_set.h"
-#include "../texture_animation.h"
+#include "../frame_animation.h"
 
 namespace ECS
 {
     struct TransformComponent
     {
         TransformComponent() {};
-        TransformComponent(float _x, float _y, int _w, int _h)
+        TransformComponent(float _x, float _y)
         {
             x = _x;
             y = _y;
-            w = _w;
-            h = _h;
         }
 
         float x = 0;
         float y = 0;
-        int w = 0;
-        int h = 0;
-
-        Rectangle get_rect() const
-        {
-            return {x, y, (float)w, (float)h};
-        }
     };
 
     struct MovementComponent
@@ -43,6 +34,7 @@ namespace ECS
 
     struct CollisionComponent
     {
+        Rectangle rect = {0};
         bool on_ground = false;
 
         // Used by the system
@@ -60,6 +52,8 @@ namespace ECS
         int w = 0;
         int h = 0;
 
+        Rectangle source = {};
+
         bool flip_h = false;
         bool flip_v = false;
 
@@ -68,7 +62,10 @@ namespace ECS
 
     struct AnimatedDrawableComponent
     {
-        TextureAnimation anim;   
+        std::string animation_id; // id of a FrameAnimation in the asset manager
+
+        FrameAnimation animation = {}; // a copy of the above FrameAnimation to modify
+                                       // this is what is used to draw
     };
 
     struct PlayerComponent

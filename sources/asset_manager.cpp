@@ -1,7 +1,6 @@
 #include "asset_manager.h"
 
 #include <assert.h>
-#include <cstdio>
 #include <memory>
 #include <iostream>
 
@@ -9,6 +8,7 @@ AssetManager::AssetManager()
 {
     assert(textures.capacity != 0);
     textures.entries = new TableEntry<Texture2D>[textures.capacity];
+    frame_animations.entries = new TableEntry<FrameAnimation>[frame_animations.capacity];
 }
 
 AssetManager::~AssetManager()
@@ -40,6 +40,17 @@ void AssetManager::load_texture(const std::string& path)
     entry.data = texture;
 
     textures.add_asset(entry);
+}
+
+void AssetManager::load_frame_animation(const std::string& id, const FrameAnimation& animation)
+{
+    TableEntry<FrameAnimation> entry;
+    entry.used = true;
+    entry.path = id;
+    entry.data = animation;
+    entry.data.id = id;
+
+    frame_animations.add_asset(entry);
 }
 
 uint32_t AssetManager::hash_string(const std::string& str)

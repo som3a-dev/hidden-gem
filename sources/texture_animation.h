@@ -6,6 +6,10 @@
 #include <string>
 #include <vector>
 
+// NOTE(): as we will mostly use sprite sheets at this point, TextureAnimation is obsolete
+// If we find any use for it it should be cleaned up to match FrameAnimation
+// Or explore a generic approach
+
 // stores an array of textures and an index
 // advances the index every X milliseconds
 struct TextureAnimation

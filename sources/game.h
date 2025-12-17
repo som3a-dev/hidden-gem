@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 #include "asset_manager.h"
-#include "texture_animation.h"
+#include "frame_animation.h"
 #include "ecs/world.h"
 #include "tilemap.h"
 

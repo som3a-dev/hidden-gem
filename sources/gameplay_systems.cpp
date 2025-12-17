@@ -1,6 +1,7 @@
 #include "gameplay_systems.h"
 #include "collision.h"
 
+#include <assert.h>
 #include <iostream>
 #include <math.h>
 
@@ -42,8 +43,13 @@ namespace GameplaySystems
             if (movement == nullptr) continue;
             TransformComponent* transform = world.transforms.get_component(entity);
             if (transform == nullptr) continue;
-
-            Rectangle entity_rect = transform->get_rect();
+ 
+            Rectangle entity_rect = {
+                transform->x + collision->rect.x,
+                transform->y + collision->rect.y,
+                collision->rect.width,
+                collision->rect.height
+            };
 
             entity_rect.x += movement->velocity.x * game.dt;
             int collision_count = Collision::get_colliding_tiles(game, tilemap, entity_rect,
@@ -60,18 +66,18 @@ namespace GameplaySystems
 
                 if (entity_center_x < tile_center_x)
                 {
-                    transform->x = tile_rect.x - transform->w;
+                    transform->x = tile_rect.x - (entity_rect.width + collision->rect.x);
                 }
                 else if (tile_center_x < entity_center_x)
                 {
-                    transform->x = tile_rect.x + tile_rect.width;
+                    transform->x = tile_rect.x + tile_rect.width - collision->rect.x;
                 }
 
                 movement->velocity.x = 0;
                 break;
             }
 
-            entity_rect.x = transform->x; // Check the actual current x position, in case we snapped
+            entity_rect.x = transform->x + collision->rect.x; // Check the actual current x position, in case we snapped
 
             entity_rect.y += movement->velocity.y * game.dt;
             collision_count = Collision::get_colliding_tiles(game, tilemap, entity_rect,
@@ -88,11 +94,11 @@ namespace GameplaySystems
 
                 if (tile_center_y < entity_center_y)
                 {
-                    transform->y = tile_rect.y + tile_rect.height;
+                    transform->y = tile_rect.y + tile_rect.height - collision->rect.y;
                 }
                 else if (entity_center_y < tile_center_y)
                 {
-                    transform->y = tile_rect.y - transform->h;
+                    transform->y = tile_rect.y - (entity_rect.height + collision->rect.y);
                     collision->on_ground = true;
                 }
 
@@ -111,19 +117,43 @@ namespace GameplaySystems
 
             DrawableComponent* drawable = world.drawables.get_component(entity);
 
-            animated_drawable->anim.update();
+            if (animated_drawable->animation_id.empty())
+            {
+                continue;
+            }
+            else if (animated_drawable->animation.id != animated_drawable->animation_id)
+            {
+                FrameAnimation* og_animation = asset_m.get_asset<FrameAnimation>
+                (animated_drawable->animation_id);
+
+                assert(og_animation);
+                animated_drawable->animation = *(og_animation);
+            }
 
             if (drawable)
             {
+                CollisionComponent* collision = world.collisions.get_component(entity);
+                if (animated_drawable && collision)
+                {
+                    collision->rect.x = (animated_drawable->animation.collision_rect.x * drawable->scale); 
+                    collision->rect.y = (animated_drawable->animation.collision_rect.y * drawable->scale); 
+
+                    collision->rect.width = (animated_drawable->animation.collision_rect.width * drawable->scale); 
+                    collision->rect.height = (animated_drawable->animation.collision_rect.height * drawable->scale); 
+                }
+
                 // update the drawable to draw the current frame of the animation
-                drawable->texture_path = animated_drawable->anim.get_current_texture();
-                drawable->flip_h = animated_drawable->anim.flip_h;
-                drawable->flip_v = animated_drawable->anim.flip_v;
+                drawable->texture_path = animated_drawable->animation.get_sheet();
 
                 Texture2D* texture = asset_m.get_asset<Texture2D>(drawable->texture_path);
-                drawable->w = texture->width;
-                drawable->h = texture->height;
+
+                drawable->w = animated_drawable->animation.get_frame_width();
+                drawable->h = animated_drawable->animation.get_frame_height();
+
+                drawable->source = animated_drawable->animation.get_current_frame_src();
             }
+
+            animated_drawable->animation.update();
         }
     }
 
@@ -142,6 +172,11 @@ namespace GameplaySystems
                 static_cast<float>(texture->width),
                 static_cast<float>(texture->height)
             };
+
+            if (drawable.source.width)
+            {
+                src_rect = drawable.source;
+            }
 
             if (drawable.flip_h) src_rect.width  = -(src_rect.width);
             if (drawable.flip_v) src_rect.height = -(src_rect.height);
@@ -197,7 +232,8 @@ namespace GameplaySystems
                     movement->velocity.x = movement->speed;
                 }
 
-                animated_drawable->anim.flip_h = false;
+                drawable->flip_h = false;
+                animated_drawable->animation_id = "knight_walk";
             }
             else if (IsKeyDown(KEY_A))
             {
@@ -207,7 +243,8 @@ namespace GameplaySystems
                     movement->velocity.x = -(movement->speed);
                 }
 
-                animated_drawable->anim.flip_h = true;
+                drawable->flip_h = true;
+                animated_drawable->animation_id = "knight_walk";
             }
             else
             {
@@ -222,6 +259,8 @@ namespace GameplaySystems
                     movement->velocity.x += player->friction;
                     if (movement->velocity.x > 0) movement->velocity.x = 0;
                 }
+
+                animated_drawable->animation_id = "knight_idle";
             }
 
             if (IsKeyPressed(KEY_SPACE))
