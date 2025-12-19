@@ -16,8 +16,6 @@ struct FrameAnimation
     // the time each frame lasts in ms
     uint32_t interval_ms = 0;
 
-    Rectangle collision_rect = {0}; // the collision rect relative to the entity, not the sprite, for this animation
-
     // sheet_width/height : width and height of the sheet in sprites
     // e.g a 8x8 sheet with 8 horizontal frames and 8 vertical frames 
     void set_sheet(const std::string& sheet_texture_id,

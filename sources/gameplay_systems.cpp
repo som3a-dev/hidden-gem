@@ -132,16 +132,6 @@ namespace GameplaySystems
 
             if (drawable)
             {
-                CollisionComponent* collision = world.collisions.get_component(entity);
-                if (animated_drawable && collision)
-                {
-                    collision->rect.x = (animated_drawable->animation.collision_rect.x * drawable->scale); 
-                    collision->rect.y = (animated_drawable->animation.collision_rect.y * drawable->scale); 
-
-                    collision->rect.width = (animated_drawable->animation.collision_rect.width * drawable->scale); 
-                    collision->rect.height = (animated_drawable->animation.collision_rect.height * drawable->scale); 
-                }
-
                 // update the drawable to draw the current frame of the animation
                 drawable->texture_path = animated_drawable->animation.get_sheet();
 

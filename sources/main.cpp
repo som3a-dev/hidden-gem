@@ -38,4 +38,4 @@ int main(void)
 //NEXT(): Asset loading and retrieving (DONE)
 //NEXT(): ECS (DONE)
 //NEXT(): COLLISION (DONE)
-//NEXT(): Spritesheet loading
+//NEXT(): Spritesheets (DONE)

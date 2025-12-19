@@ -56,10 +56,6 @@ void Game::create_player(float x, float y)
         anim.frames.push_back({7, 2});
 
         anim.interval_ms = 70;
-        anim.collision_rect = {
-            9, 8,
-            15, 20
-        };
 
         asset_m.load_frame_animation("knight_walk", std::move(anim));
     }
@@ -72,10 +68,6 @@ void Game::create_player(float x, float y)
 //        anim.frames.push_back({3, 0});
 
         anim.interval_ms = 300;
-        anim.collision_rect = {
-            9, 8,
-            15, 20
-        };
 
         asset_m.load_frame_animation("knight_idle", std::move(anim));
     }
@@ -90,6 +82,8 @@ void Game::create_player(float x, float y)
     movement.gravity = gravity * 2;
 
     ECS::CollisionComponent collision;
+    collision.rect.x = 50;
+    collision.rect.y = 60;
     collision.rect.width = 60; // default/fallback size
     collision.rect.height = 80;
 
