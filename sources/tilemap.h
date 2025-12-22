@@ -1,8 +1,8 @@
 #ifndef _TILEMAP_H
 #define _TILEMAP_H
 
-#define INVALID_TILE -2
-#define EMPTY_TILE -1
+#define INVALID_TILE -1
+#define EMPTY_TILE 0
 
 struct Tilemap
 {

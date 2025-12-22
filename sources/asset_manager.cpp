@@ -9,6 +9,7 @@ AssetManager::AssetManager()
     assert(textures.capacity != 0);
     textures.entries = new TableEntry<Texture2D>[textures.capacity];
     frame_animations.entries = new TableEntry<FrameAnimation>[frame_animations.capacity];
+    tiles.entries = new TableEntry<Tile>[tiles.capacity];
 }
 
 AssetManager::~AssetManager()
@@ -39,7 +40,10 @@ void AssetManager::load_texture(const std::string& path)
     entry.path = path;
     entry.data = texture;
 
-    textures.add_asset(entry);
+    if (textures.add_asset(entry) == false)
+    {
+        UnloadTexture(texture);
+    }
 }
 
 void AssetManager::load_frame_animation(const std::string& id, const FrameAnimation& animation)
@@ -51,6 +55,16 @@ void AssetManager::load_frame_animation(const std::string& id, const FrameAnimat
     entry.data.id = id;
 
     frame_animations.add_asset(entry);
+}
+
+void AssetManager::load_tile(const Tile& tile)
+{
+    TableEntry<Tile> entry;
+    entry.used = true;
+    entry.data = tile;
+    entry.path = std::to_string(tile.id);
+
+    tiles.add_asset(entry);
 }
 
 uint32_t AssetManager::hash_string(const std::string& str)

@@ -8,10 +8,16 @@
 
 struct AssetManager;
 
+struct Frame
+{
+    int x = 0;
+    int y = 0;
+};
+
 struct FrameAnimation
 {
     std::string id;
-    std::vector<Vector2> frames;
+    std::vector<Frame> frames;
 
     // the time each frame lasts in ms
     uint32_t interval_ms = 0;
@@ -22,6 +28,9 @@ struct FrameAnimation
                    const AssetManager& asset_m,
                    int sheet_width,
                    int sheet_height);
+
+    // Pushes all frames in a specified range of [x1, x2] and [y1, y2]
+    void push_frame_interval(int x1, int x2, int y1, int y2);
 
     inline const std::string& get_sheet() const
     {

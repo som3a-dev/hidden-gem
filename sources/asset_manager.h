@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "frame_animation.h"
+#include "tile.h"
 
 // the asset manager stores assets in a hash table
 // it uses linear probing for collision handling
@@ -33,7 +34,7 @@ private:
         TableEntry<T>* entries = nullptr;
         int capacity = 30;
 
-        void add_asset(const TableEntry<T>& asset);
+        bool add_asset(const TableEntry<T>& asset);
 
         TableEntry<T>* get_asset(const std::string& path) const;
 
@@ -48,12 +49,14 @@ private:
 
     template<>
     const Table<Texture2D>& get_table<Texture2D>() const { return textures; }
-
     template<>
     const Table<FrameAnimation>& get_table<FrameAnimation>() const { return frame_animations; }
+    template<>
+    const Table<Tile>& get_table<Tile>() const { return tiles; }
 
     Table<Texture2D> textures;
     Table<FrameAnimation> frame_animations;
+    Table<Tile> tiles;
 
     static uint32_t hash_string(const std::string& str);
 public:
@@ -66,10 +69,11 @@ public:
 
     void load_texture(const std::string& path);
     void load_frame_animation(const std::string& id, const FrameAnimation& animation);
+    void load_tile(const Tile& tile);
 
     void print_texture_table() const;
 };
 
-#include "asset_manager.tpp"
+#include "asset_manager_generic.h"
 
 #endif

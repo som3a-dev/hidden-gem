@@ -16,6 +16,17 @@ void FrameAnimation::set_sheet(const std::string& sheet_texture_id,
     sheet_texture = sheet_texture_id;
 }
 
+void FrameAnimation::push_frame_interval(int x1, int x2, int y1, int y2)
+{
+    for (int y = y1; y <= y2; y++)
+    {
+        for (int x = x1; x <= x2; x++)
+        {
+            frames.push_back({x, y});
+        }
+    }
+}
+
 void FrameAnimation::update()
 {
     uint32_t time_ms = static_cast<uint32_t>(GetTime() * 1000);
@@ -36,7 +47,7 @@ Rectangle FrameAnimation::get_current_frame_src() const
 {
     if (frames.empty()) return {};
 
-    Vector2 frame_pos = frames[frame_index];
+    Frame frame_pos = frames[frame_index];
     return {
         (float)(frame_width * frame_pos.x),
         (float)(frame_height * frame_pos.y),

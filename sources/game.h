@@ -41,6 +41,7 @@ struct Game
     void create_player(float x, float y);
 
     void load_tilemap(const std::string& filepath);
+    void load_tileset(const std::string& filepath);
 };
 
 #endif

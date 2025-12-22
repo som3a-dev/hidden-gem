@@ -49,7 +49,7 @@ AssetManager::TableEntry<T>* AssetManager::Table<T>::get_asset(const std::string
 }
 
 template<typename T>
-void AssetManager::Table<T>::add_asset(const TableEntry<T>& asset)
+bool AssetManager::Table<T>::add_asset(const TableEntry<T>& asset)
 {
     // TODO(omar): differentiate between the function failing
     // due to the table being full
@@ -61,26 +61,34 @@ void AssetManager::Table<T>::add_asset(const TableEntry<T>& asset)
 
         capacity *= 2;
         TableEntry<T>* new_table = new TableEntry<T>[capacity];
+        TableEntry<T>* old_table = entries;
+        entries = new_table;
 
-        // TODO(omar): USE add_entry DURING REHASH
         for (int i = 0; i < old_capacity; i++)
         {
-            TableEntry<T>* old_entry = entries + i;
+            TableEntry<T>* old_entry = old_table + i;
             if (old_entry->used == false)
             {
                 continue;
             }
 
-            uint32_t new_index = hash_string(old_entry->path) % capacity;
-            new_table[new_index] = *old_entry;
+            add_entry(*old_entry);
         }
 
-        delete[] entries;
-        entries = new_table;
+        delete[] old_table;
 
         // Add the texture to the table now that we've expanded
-        add_entry(asset);
+        if (add_entry(asset))
+        {
+            return true;
+        }
     }
+    else
+    {
+        return true;
+    }
+
+    return false;
 }
 
 template<typename T>

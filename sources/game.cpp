@@ -1,6 +1,8 @@
 #include "game.h"
 #include "gameplay_systems.h"
 
+#include "vendor/json.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <utility>
@@ -17,20 +19,12 @@ void Game::init()
     InitWindow(screen_width, screen_height, "Hidden GEM");
     SetTargetFPS(60);
     
-    asset_m.load_texture(ASSETS_PATH"knight/knight000.png");
-    asset_m.load_texture(ASSETS_PATH"knight/knight001.png");
-    asset_m.load_texture(ASSETS_PATH"knight/knight002.png");
     asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png");
+    asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/block.png");
 
-    asset_m.print_texture_table();
+    load_tileset(ASSETS_PATH"tileset.json");
 
     tilemap.create(screen_width / tile_width, screen_height / tile_height);
-
-/*    for (int i = 0; i < tilemap.get_width(); i++)
-    {
-        tilemap.set_tile(i, tilemap.get_height() - 3, 1);
-    }*/
-
     load_tilemap(ASSETS_PATH"map.txt");
 
     create_player(100, 100);
@@ -39,74 +33,6 @@ void Game::init()
 void Game::destroy()
 {
     CloseWindow();
-}
-
-void Game::create_player(float x, float y)
-{
-    {
-        FrameAnimation anim;
-        anim.set_sheet(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png", asset_m, 8, 8);
-        anim.frames.push_back({0, 2});
-        anim.frames.push_back({1, 2});
-        anim.frames.push_back({2, 2});
-        anim.frames.push_back({3, 2});
-        anim.frames.push_back({4, 2});
-        anim.frames.push_back({5, 2});
-        anim.frames.push_back({6, 2});
-        anim.frames.push_back({7, 2});
-
-        anim.interval_ms = 70;
-
-        asset_m.load_frame_animation("knight_walk", std::move(anim));
-    }
-    {
-        FrameAnimation anim;
-        anim.set_sheet(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png", asset_m, 8, 8);
-        anim.frames.push_back({0, 0});
-        anim.frames.push_back({1, 0});
-//        anim.frames.push_back({2, 0});
-//        anim.frames.push_back({3, 0});
-
-        anim.interval_ms = 300;
-
-        asset_m.load_frame_animation("knight_idle", std::move(anim));
-    }
-
-    ECS::DrawableComponent drawable;
-    drawable.scale = 5;
-
-    ECS::TransformComponent transform = {x, y};
-
-    ECS::MovementComponent movement;
-    movement.speed = 0.3f;
-    movement.gravity = gravity * 2;
-
-    ECS::CollisionComponent collision;
-    collision.rect.x = 50;
-    collision.rect.y = 60;
-    collision.rect.width = 60; // default/fallback size
-    collision.rect.height = 80;
-
-    ECS::AnimatedDrawableComponent animated_drawable;
-    animated_drawable.animation_id = "knight_idle";
-
-    ECS::PlayerComponent player_component;
-    player_component.accel = 0.03f;
-    player_component.friction = 0.03f;
-    player_component.jump_force = 0.5f;
-
-    player = world.create_entity();
-    world.transforms.add_component(player, std::move(transform));
-
-    world.movements.add_component(player, std::move(movement));
-
-    world.collisions.add_component(player, std::move(collision));
-
-    world.drawables.add_component(player, std::move(drawable));
-
-    world.animated_drawables.add_component(player, std::move(animated_drawable));
-
-    world.players.add_component(player, std::move(player_component));
 }
 
 void Game::loop()
@@ -169,26 +95,6 @@ void Game::draw()
         }
     }
 
-    FrameAnimation* anim = asset_m.get_asset<FrameAnimation>("knight_walk");
-
-    if (anim)
-    {
-        anim->update();
-
-        Rectangle src = anim->get_current_frame_src();
-        Rectangle dst = {
-            100, 100,
-            src.width * 4, src.height * 4
-        };
-
-        Texture2D* sheet = asset_m.get_asset<Texture2D>(anim->get_sheet());
-
-        if (sheet)
-        {
-            DrawTexturePro(*sheet, src, dst, {0, 0}, 0, WHITE);
-        }
-    }
-
     int fps = GetFPS();
     char buf[12];
     snprintf(buf, sizeof(buf), "%d", fps);
@@ -219,7 +125,21 @@ void Game::draw_tilemap()
                 (float)tile_height
             };
 
-            DrawRectangle(x, y, tile_width, tile_height, BROWN);
+            Tile* tile = asset_m.get_asset<Tile>(std::to_string(id));
+            if (tile)
+            {
+                Texture2D* texture = asset_m.get_asset<Texture2D>(tile->texture_id);
+                if (texture)
+                {
+                    DrawTexturePro(*texture, {0, 0, (float)(texture->width), (float)(texture->height)},
+                    tile_rect, {0, 0}, 0, WHITE);
+                }
+                else
+                {
+                    DrawRectangle(x, y, tile_width, tile_height, BLACK);
+                }
+            }
+
             if (debug_draw)
             {
                 DrawRectangleLinesEx(tile_rect, 2, RED);
@@ -240,9 +160,9 @@ void Game::load_tilemap(const std::string& filepath)
         std::cout << line << std::endl;
         for (char tile : line)
         {
-            if (tile == '1')
+            if ((tile >= '0') && (tile <= '9'))
             {
-                tilemap.set_tile(x, y, 1);
+                tilemap.set_tile(x, y, tile - '0');
             }
 
             x++;
@@ -252,4 +172,43 @@ void Game::load_tilemap(const std::string& filepath)
     }
 }
 
+void Game::load_tileset(const std::string& filepath)
+{
+    using namespace nlohmann;
 
+    std::ifstream file(filepath);
+    if (file.is_open())
+    {
+        json data = json::parse(file);
+        for (const auto& tile : data)
+        {
+            if (tile.contains("id") == false)
+            {
+                continue;
+            }
+            if (tile["id"].is_number_integer() == false)
+            {
+                continue;
+            }
+
+            int id = tile["id"];
+
+            if (tile.contains("texture_id"))
+            {
+                if (tile["texture_id"].is_string())
+                {
+                    std::string texture_id = tile["texture_id"];
+                    texture_id.insert(0, ASSETS_PATH);
+
+                    asset_m.load_texture(texture_id);
+
+                    Tile tile_data;
+                    tile_data.id = id;
+                    tile_data.texture_id = texture_id;
+
+                    asset_m.load_tile(tile_data);
+                }
+            }
+        }
+    }
+}
