@@ -9,13 +9,31 @@
 
 #include <vector>
 
+struct LightColor 
+{
+    float r;
+    float g;
+    float b;
+};
+
+struct LightSource
+{
+    float x = 0;
+    float y = 0;
+    float radius = 0;
+    float height = 0;
+    float ambient_attenuation = 0;
+    LightColor color = {0};
+};
+
 struct Game
 {
+    Shader shader;
     bool running;
     int screen_width;
     int screen_height;
 
-    bool debug_draw = false;
+    bool debug_draw;
 
     AssetManager asset_m;
 
@@ -29,6 +47,14 @@ struct Game
 
     int player;
 
+    LightSource light;
+
+    Vector2 light_pos;
+    float light_radius;
+    LightColor light_color;
+    float ambient_attenuation;
+    std::string current_normal_map;
+
     void init();
     void destroy();
 
@@ -36,6 +62,8 @@ struct Game
     void update();
     void draw();
     void draw_tilemap();
+    void draw_tilemap_debug_overlay();
+
 
     void create_tile(float x, float y);
     void create_player(float x, float y);

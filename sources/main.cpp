@@ -40,3 +40,4 @@ int main(void)
 //NEXT(): COLLISION (DONE)
 //NEXT(): Spritesheets (DONE)
 //NEXT(): Tiles, Tileset, Etc (DONE)
+//NEXT(): Map editor/creator

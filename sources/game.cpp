@@ -3,6 +3,8 @@
 
 #include "vendor/json.hpp"
 
+#include <raymath.h>
+
 #include <iostream>
 #include <fstream>
 #include <utility>
@@ -21,6 +23,9 @@ void Game::init()
     
     asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png");
     asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/block.png");
+    asset_m.load_texture(ASSETS_PATH"brick_normal_map.png");
+    asset_m.load_texture(ASSETS_PATH"normal_map.png");
+    asset_m.load_texture(ASSETS_PATH"brickwall.jpg");
 
     load_tileset(ASSETS_PATH"tileset.json");
 
@@ -28,10 +33,18 @@ void Game::init()
     load_tilemap(ASSETS_PATH"map.txt");
 
     create_player(100, 100);
+
+    shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
+    light.x = 500;
+    light.y = 300;
+    light.radius = 600;
+    light.color = {1.0f, 0.9f, 0.6f};
+    light.ambient_attenuation = 0.03f;
 }
 
 void Game::destroy()
 {
+    UnloadShader(shader);
     CloseWindow();
 }
 
@@ -60,23 +73,65 @@ void Game::update()
 
     dt = GetFrameTime() * 1000;
 
+    light.x += 0.1f * dt;
+    if (light.x > screen_width)
+    {
+        light.x = -100;
+    }
+
     using namespace GameplaySystems;
     player_system(world);
 
     collision_update_system(world, *this, tilemap);
     transform_update_system(world, *this);
     animated_drawable_system(world, asset_m);
+
+    if (IsKeyDown(KEY_M))
+    {
+        current_normal_map = ASSETS_PATH"brick_normal_map.png";
+    }
+    else
+    {
+        current_normal_map = ASSETS_PATH"normal_map.png";
+    }
 }
 
 void Game::draw()
 {
-    BeginDrawing();
+    ECS::TransformComponent* trans = world.transforms.get_component(player);
 
-    ClearBackground({60, 60, 60, 255});
+    int light_pos_uniform = GetShaderLocation(shader, "lightPos");
+    SetShaderValue(shader, light_pos_uniform, &(light), SHADER_UNIFORM_VEC2);
+
+    int light_radius_uniform = GetShaderLocation(shader, "lightRadius");
+    SetShaderValue(shader, light_radius_uniform, &(light.radius), SHADER_UNIFORM_FLOAT);
+
+    int light_color_uniform = GetShaderLocation(shader, "lightColor");
+    SetShaderValue(shader, light_color_uniform, &(light.color), SHADER_UNIFORM_VEC3);
+
+    int ambient_uniform = GetShaderLocation(shader, "ambientAttenuation");
+    SetShaderValue(shader, ambient_uniform, &(light.ambient_attenuation), SHADER_UNIFORM_FLOAT);
+
+    Texture2D* normal_map = asset_m.get_asset<Texture2D>(current_normal_map);
+
+    BeginDrawing();
+    ClearBackground({0, 0, 0, 255});
+
+    BeginShaderMode(shader);
+    if (normal_map)
+    {
+        int normal_map_uniform = GetShaderLocation(shader, "normalMap");
+        SetShaderValueTexture(shader, normal_map_uniform, *normal_map);
+    }
 
     draw_tilemap();
 
     GameplaySystems::render_drawable_system(world, asset_m);
+
+    EndShaderMode();
+
+    DrawCircleLines((int)(light.x), (int)(light.y), light.radius, WHITE);
+    DrawRectangle((int)(light.x), (int)(light.y), 4, 4, WHITE);
 
     if (debug_draw)
     {
@@ -93,6 +148,8 @@ void Game::draw()
             };
             DrawRectangleLinesEx(rect, 2, RED);
         }
+
+        draw_tilemap_debug_overlay();
     }
 
     int fps = GetFPS();
@@ -139,11 +196,34 @@ void Game::draw_tilemap()
                     DrawRectangle(x, y, tile_width, tile_height, BLACK);
                 }
             }
+        }
+    }
+}
+void Game::draw_tilemap_debug_overlay()
+{
+    if (debug_draw == false) return;
 
-            if (debug_draw)
+    for (int tile_y = 0; tile_y < tilemap.get_height(); tile_y++)
+    {
+        for (int tile_x = 0; tile_x < tilemap.get_width(); tile_x++)
+        {
+            int id = tilemap.get_tile(tile_x, tile_y);
+            if (id == EMPTY_TILE)
             {
-                DrawRectangleLinesEx(tile_rect, 2, RED);
+                continue;
             }
+
+            int x = tile_x * tile_width;
+            int y = tile_y * tile_height;
+
+            Rectangle tile_rect = {
+                (float)x,
+                (float)y,
+                (float)tile_width,
+                (float)tile_height
+            };
+
+            DrawRectangleLinesEx(tile_rect, 2, RED);
         }
     }
 }
