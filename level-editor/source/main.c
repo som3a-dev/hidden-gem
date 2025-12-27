@@ -32,23 +32,23 @@ int main(void)
 		nk_input_begin(&ctx);
 
 		Vector2 mouse_pos = GetMousePosition();
-		nk_input_motion(&ctx, mouse_pos.x, mouse_pos.y);
+		nk_input_motion(&ctx, (int)(mouse_pos.x), (int)(mouse_pos.y));
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 		{
-			nk_input_button(&ctx, NK_BUTTON_LEFT, mouse_pos.x, mouse_pos.y, true);
+			nk_input_button(&ctx, NK_BUTTON_LEFT, (int)(mouse_pos.x), (int)(mouse_pos.y), true);
 		}
 		else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT))
 		{
-			nk_input_button(&ctx, NK_BUTTON_LEFT, mouse_pos.x, mouse_pos.y, false);
+			nk_input_button(&ctx, NK_BUTTON_LEFT, (int)(mouse_pos.x), (int)(mouse_pos.y), false);
 		}
 
 		nk_input_end(&ctx);
 
-		if (nk_begin(&ctx, "level-editor", nk_rect(0, 0, window_width, window_height),
+		if (nk_begin(&ctx, "level-editor", nk_rect(0, 0, (float)window_width, (float)window_height),
 			NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
 			// fixed widget pixel width
-			nk_layout_row_static(&ctx, 0, MeasureText("button", font.baseSize) * 1.5f, 1);
+			nk_layout_row_static(&ctx, 0, (int)(MeasureText("button", font.baseSize) * 1.5f), 1);
 			if (nk_button_label(&ctx, "button")) {
 				// event handling
 				printf("Pressed\n");
