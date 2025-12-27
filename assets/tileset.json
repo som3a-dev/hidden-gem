@@ -5,6 +5,10 @@
     },
     {
         "id": 2,
-        "texture_id": "normal_crate.png"
+        "texture_id": "brackeys_platformer_assets/sprites/block.png"
+    },
+    {
+        "id": 3,
+        "texture_id": "brackeys_platformer_assets/sprites/block.png"
     }
 ]
