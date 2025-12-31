@@ -3,3 +3,5 @@
 Mario maker style level creator
 
 Enemy infighting
+
+Add game of life in the level editor for fun
