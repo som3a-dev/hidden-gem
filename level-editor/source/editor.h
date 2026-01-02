@@ -2,7 +2,7 @@
 #define _EDITOR_H
 
 #include "tilemap.h"
-#include "nuklear.h"
+#include "nk_raylib.h"
 
 #include <raylib.h>
 

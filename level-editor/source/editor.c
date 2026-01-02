@@ -1,12 +1,12 @@
+#include "asset.h"
 #include "editor.h"
 #include "tilemap.h"
+#include "nk_raylib.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-
-#define NK_IMPLEMENTATION
-#include "nk_raylib.h"
 
 void run_editor()
 {
@@ -17,7 +17,6 @@ void run_editor()
     s.tile_w = 32;
     s.tile_h = 32;
 
-    int edit_area_margin = s.tile_w * 2;
     s.edit_area.left = 250;
     s.edit_area.right = 250;
     s.edit_area.top = 40;
@@ -41,6 +40,8 @@ void run_editor()
 
     struct nk_context* ctx = &(s.nk_ctx);
 	nk_init_default(ctx, &(s.nk_font));
+
+    asset_load_texture(ASSETS_PATH"block.png");
 
 	while (WindowShouldClose() == 0)
 	{
@@ -94,15 +95,6 @@ void run_editor()
 		BeginDrawing();
 		ClearBackground(s.bg_color);
 
-        Rectangle edit_area_rect = {
-            0 + s.edit_area.left - s.edit_area.border_thickness,
-            0 + s.edit_area.top - s.edit_area.border_thickness,
-            s.window_w - s.edit_area.right - s.edit_area.left + s.edit_area.border_thickness,
-            s.window_h - s.edit_area.bottom - s.edit_area.top + s.edit_area.border_thickness
-        };
-
-        DrawRectangleLinesEx(edit_area_rect, 6, BLACK);
-
         for (int tile_y = 0; tile_y < s.tilemap.height; tile_y++)
         {
             for (int tile_x = 0; tile_x < s.tilemap.width; tile_x++)
@@ -110,42 +102,47 @@ void run_editor()
                 int x = tile_x * s.tile_w;
                 int y = tile_y * s.tile_h;
 
-/*                if (x < edit_area_rect.x) continue;
-                if (y < edit_area_rect.y) continue;
-                if ((x + s.tile_w) > (edit_area_rect.x + edit_area_rect.width))
-                {
-                    continue;
-                }
-                if ((y + s.tile_h) > (edit_area_rect.y + edit_area_rect.height))
-                {
-                    continue;
-                }*/
-
-                if (tilemap_get(&(s.tilemap), tile_x, tile_y) != TILE_EMPTY)
-                {
-                    DrawRectangle(x, y, s.tile_w, s.tile_h,
-                    GREEN);
-                }
-
-                Rectangle outline = {
+                Rectangle tile_rect = {
                     (float)x, (float)y,
                     (float)s.tile_w, (float)s.tile_h
                 };
+
+                if (tilemap_get(&(s.tilemap), tile_x, tile_y) != TILE_EMPTY)
+                {
+                    Texture* texture = asset_get_texture(ASSETS_PATH"block.png");
+
+                    assert(texture);
+                    Rectangle src = {
+                        0, 0,
+                        (float)(texture->width), (float)(texture->height)};
+                    Vector2 origin = {0, 0};
+                    DrawTexturePro(*texture, src, tile_rect, origin, 0, WHITE);
+                }
+
                 Color outline_color = {
                     255, 255, 255, 20
                 };
-                DrawRectangleLinesEx(outline, 1, outline_color);
+                DrawRectangleLinesEx(tile_rect, 1, outline_color);
             }
         }
 
-        DrawRectangle(0, 0, edit_area_rect.x, s.window_h, s.bg_color);
-        DrawRectangle(0, 0, s.window_w, edit_area_rect.y, s.bg_color);
-        DrawRectangle(edit_area_rect.x + edit_area_rect.width, 0,
-                    s.window_w - edit_area_rect.x, s.window_h,
+        Rectangle edit_area_rect = {
+            (float)(0 + s.edit_area.left - s.edit_area.border_thickness),
+            (float)(0 + s.edit_area.top - s.edit_area.border_thickness),
+            (float)(s.window_w - s.edit_area.right - s.edit_area.left + s.edit_area.border_thickness),
+            (float)(s.window_h - s.edit_area.bottom - s.edit_area.top + s.edit_area.border_thickness)
+        };
+
+        DrawRectangleLinesEx(edit_area_rect, 6, BLACK);
+        DrawRectangle(0, 0, (int)(edit_area_rect.x), s.window_h, s.bg_color);
+        DrawRectangle(0, 0, s.window_w, (int)(edit_area_rect.y), s.bg_color);
+
+        DrawRectangle((int)(edit_area_rect.x + edit_area_rect.width), 0,
+                    (int)(s.window_w - edit_area_rect.x), s.window_h,
                     s.bg_color);
 
-        DrawRectangle(0, edit_area_rect.y + edit_area_rect.height,
-                    s.window_w, s.window_h - edit_area_rect.height,
+        DrawRectangle(0, (int)(edit_area_rect.y + edit_area_rect.height),
+                    s.window_w, (int)(s.window_h - edit_area_rect.height),
                     s.bg_color);
 
         Rectangle cursor_rect = {
@@ -160,6 +157,8 @@ void run_editor()
 
 		nk_clear(ctx);
 	}
+
+    asset_delete_assets();
 
     tilemap_delete(&(s.tilemap));
 	UnloadFont(s.font);

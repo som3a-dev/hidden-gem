@@ -28,7 +28,6 @@ void nk_raylib_draw_commands(struct nk_context* ctx)
             case NK_COMMAND_LINE: 
             {
                 const struct nk_command_line* line = (const struct nk_command_line*)cmd;
-                Color color = {line->color.r, line->color.g, line->color.b, line->color.a};
                 DrawLine(line->begin.x, line->begin.y, line->end.x, line->end.y, nk_to_rl_color(line->color));
             } break;
 
@@ -97,6 +96,8 @@ static Color nk_to_rl_color(struct nk_color color)
 
 static float nk_font_width_callback(nk_handle handle, float height, const char *text, int len)
 {
+    (void)len;
+    (void)height;
     Font* font = (Font*)(handle.ptr);
 	if (font == NULL) {
 		return 0;
