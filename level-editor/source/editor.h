@@ -28,16 +28,27 @@ typedef struct
 
     Color bg_color;
 
+    bool mouse_moved; // did the mouse move last frame
+    Vector2 prev_mouse_pos;
+
     edit_area_t edit_area;
 
     tilemap_t tilemap;
     int tile_w;
     int tile_h;
 
+    int camera_x;
+    int camera_y;
+
     int cursor_x;
     int cursor_y;
+    double cursor_first_move_ms;
+    double cursor_last_move_ms;
 } editor_state_t;
 
 void run_editor();
+
+// returns an {x, y, w, h} rect from the edit area, given the window/viewport width and height
+Rectangle edit_area_get_rect(const edit_area_t* a, int window_w, int window_h);
 
 #endif

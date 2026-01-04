@@ -1,5 +1,7 @@
+#ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
+#endif
 
 #include "editor.h"
 
@@ -8,9 +10,16 @@ static void dump_crtdbg();
 
 int main(void)
 {
+    #ifdef _DEBUG
 	init_crtdbg();
+    #endif
+
 	run_editor();
+
+    #ifdef _DEBUG
 	dump_crtdbg();
+    #endif
+
 	return 0;
 }
 
