@@ -6,6 +6,8 @@
 
 #include <raylib.h>
 
+#include <stdbool.h>
+
 // the edit/play area is defined as offsets from the window in the 4 directions
 // left right top bottom
 typedef struct
@@ -44,6 +46,7 @@ typedef struct
     int cursor_y;
     double cursor_first_move_ms;
     double cursor_last_move_ms;
+    bool draw_cursor;
 } editor_state_t;
 
 void run_editor();

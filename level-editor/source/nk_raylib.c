@@ -1,5 +1,9 @@
 #include "nk_raylib.h"
 
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 static Color nk_to_rl_color(struct nk_color color);
 static float nk_font_width_callback(nk_handle handle, float height, const char *text, int len);
 
@@ -14,6 +18,32 @@ struct nk_user_font nk_raylib_create_user_font(const Font* font)
 	nk_font.width = nk_font_width_callback;
 
     return nk_font;
+}
+
+struct nk_image nk_raylib_texture_to_image(Texture* tex)
+{
+    assert(tex);
+
+    struct nk_image img;
+
+	img.handle.ptr = tex;
+	img.w = (nk_ushort)tex->width;
+	img.h = (nk_ushort)tex->height;
+
+    // Set the region so we can sub-select the image later.
+    img.region[0] = (nk_ushort)0;
+    img.region[1] = (nk_ushort)0;
+    img.region[2] = img.w;
+    img.region[3] = img.h;
+
+    return img;
+}
+
+void nk_raylib_free_image(struct nk_image* img)
+{
+    assert(img);
+
+    free(img->handle.ptr);
 }
 
 void nk_raylib_draw_commands(struct nk_context* ctx)
@@ -80,8 +110,20 @@ void nk_raylib_draw_commands(struct nk_context* ctx)
             {
                 const struct nk_command_scissor* scissor = (const struct nk_command_scissor*)cmd;
 
-                EndScissorMode();
                 BeginScissorMode(scissor->x, scissor->y, scissor->w, scissor->h);
+            } break;
+
+            case NK_COMMAND_IMAGE:
+            {
+                const struct nk_command_image* c = (const struct nk_command_image*)cmd;
+
+                Texture* tex = (Texture*)(c->img.handle.ptr);
+                if (tex)
+                {
+                    Rectangle src = {0, 0, (float)(tex->width), (float)(tex->height)};
+                    Rectangle dst = {(float)(c->x), (float)(c->y), (float)(c->w), (float)(c->h)};
+                    DrawTexturePro(*tex, src, dst, (Vector2){0,0}, 0, WHITE);
+                }
             } break;
         }
     }
