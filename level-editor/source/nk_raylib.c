@@ -22,9 +22,11 @@ struct nk_user_font nk_raylib_create_user_font(const Font* font)
 
 struct nk_image nk_raylib_texture_to_image(Texture* tex)
 {
-    assert(tex);
-
-    struct nk_image img;
+    struct nk_image img = {0};
+    if (tex == NULL)
+    {
+        return img;
+    }
 
 	img.handle.ptr = tex;
 	img.w = (nk_ushort)tex->width;
@@ -122,7 +124,13 @@ void nk_raylib_draw_commands(struct nk_context* ctx)
                 {
                     Rectangle src = {0, 0, (float)(tex->width), (float)(tex->height)};
                     Rectangle dst = {(float)(c->x), (float)(c->y), (float)(c->w), (float)(c->h)};
-                    DrawTexturePro(*tex, src, dst, (Vector2){0,0}, 0, WHITE);
+
+                    Color color;
+                    color.r = c->col.r;
+                    color.g = c->col.g;
+                    color.b = c->col.b;
+                    color.a = c->col.a;
+                    DrawTexturePro(*tex, src, dst, (Vector2){0,0}, 0, color);
                 }
             } break;
         }

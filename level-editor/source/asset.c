@@ -10,7 +10,7 @@
 typedef struct
 {
     bool used;
-    char path[256];
+    char path[ASSET_MAX_PATH];
     Texture2D texture;
 } texture_entry_t;
 

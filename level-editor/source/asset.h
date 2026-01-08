@@ -7,6 +7,8 @@
 #ifndef _ASSET_H
 #define _ASSET_H
 
+#define ASSET_MAX_PATH 256
+
 #include <raylib.h>
 
 void asset_load_texture(const char* path);

@@ -1,41 +1,28 @@
 #include "asset.h"
+#include "collision.h"
 #include "editor.h"
 #include "tilemap.h"
 #include "nk_raylib.h"
+
+#include "editor_cursor.h"
+#include "editor_camera.h"
+#include "editor_ui.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-
-#define CURSOR_HELD_DELAY 300
-#define CURSOR_HELD_MOVE_TIME 30
-#define CAMERA_SPEED 4
-#define INPUT_MAX_ACTION_KEYS 10
-
-typedef struct
-{
-    int keys[INPUT_MAX_ACTION_KEYS];
-    int key_count;
-} input_action_t;
+#include <string.h>
 
 static void editor_init(editor_state_t* s);
 static void editor_delete(editor_state_t* s);
 
 static void editor_update(editor_state_t* s);
-static void editor_update_cursor(editor_state_t* s);
-static int editor_move_cursor_held(editor_state_t* s, int cursor_coord, int move);
+static void editor_update_zoom(editor_state_t* s);
 
 static void editor_draw(editor_state_t* s);
 static void editor_draw_edit_area(editor_state_t* s);
 static void editor_draw_tilemap(editor_state_t* s);
-static void editor_draw_cursor(editor_state_t* s);
-
-static void input_action_add_key(input_action_t* a, int key);
-static bool input_action_is_pressed(const input_action_t* a);
-static bool input_action_is_held(const input_action_t* a);
-
-static bool is_pos_in_rect(float x, float y, Rectangle r);
 
 static struct nk_context* ctx = NULL;
 
@@ -53,21 +40,6 @@ void run_editor()
     editor_delete(&s);
 }
 
-Rectangle edit_area_get_rect(const edit_area_t* a, int window_w, int window_h)
-{
-    if (a == NULL)
-    {
-        return (Rectangle){0};
-    }
-
-    return (Rectangle){
-        (float)(0 + a->left),
-        (float)(0 + a->top),
-        (float)(window_w - a->right - a->left),
-        (float)(window_h - a->bottom - a->top)
-    };
-}
-
 static void editor_init(editor_state_t* s)
 {
     s->window_w = 1280;
@@ -75,6 +47,9 @@ static void editor_init(editor_state_t* s)
 
 	InitWindow(s->window_w, s->window_h, "level-editor");
     SetTargetFPS(60);
+
+    asset_load_texture(ASSETS_PATH"block.png");
+    asset_load_texture(ASSETS_PATH"dirt0.png");
 
     s->tile_w = 32;
     s->tile_h = 32;
@@ -93,6 +68,11 @@ static void editor_init(editor_state_t* s)
 	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 24, NULL, 0);
 	s->nk_font = nk_raylib_create_user_font(&(s->font));
 
+    tileset_add_tile(&s->tileset, 1, ASSETS_PATH"dirt0.png");
+    tileset_add_tile(&s->tileset, 2, ASSETS_PATH"block.png");
+
+    s->selected_tile_id = 1;
+
     tilemap_create(&(s->tilemap), s->window_w / s->tile_w, s->window_h / s->tile_h);
 
     Rectangle edit_rect = edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h);
@@ -101,8 +81,6 @@ static void editor_init(editor_state_t* s)
 
     ctx = &(s->nk_ctx);
 	nk_init_default(ctx, &(s->nk_font));
-
-    asset_load_texture(ASSETS_PATH"block.png");
 }
 
 static void editor_delete(editor_state_t* s)
@@ -118,34 +96,14 @@ static void editor_delete(editor_state_t* s)
 
 static void editor_update(editor_state_t* s)
 {
-    nk_input_begin(ctx);
+    editor_update_ui_input(s);
+    editor_update_zoom(s);
+    editor_update_camera(s);
+    editor_update_cursor(s);
+}
 
-    Vector2 mouse_pos = GetMousePosition();
-    if ((mouse_pos.x != s->prev_mouse_pos.x) || (mouse_pos.y != s->prev_mouse_pos.y))
-    {
-        s->mouse_moved = true;
-    }
-    else
-    {
-        s->mouse_moved = false;
-    }
-    s->prev_mouse_pos = mouse_pos;
-
-    nk_input_motion(ctx, (int)(mouse_pos.x), (int)(mouse_pos.y));
-
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-    {
-        nk_input_button(ctx, NK_BUTTON_LEFT,
-        (int)(mouse_pos.x), (int)(mouse_pos.y), true);
-    }
-    else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT))
-    {
-        nk_input_button(ctx, NK_BUTTON_LEFT,
-        (int)(mouse_pos.x), (int)(mouse_pos.y), false);
-    }
-
-    nk_input_end(ctx);
-
+static void editor_update_zoom(editor_state_t* s)
+{
     if (IsKeyPressed(KEY_EQUAL))
     {
         s->edit_area.border_thickness += 1;
@@ -159,169 +117,6 @@ static void editor_update(editor_state_t* s)
     {
         s->edit_area.border_thickness = 1;
     }
-
-    if (s->mouse_moved)
-    {
-        Rectangle edit_rect = edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h);
-        if ((mouse_pos.x > edit_rect.x) && (mouse_pos.x < edit_rect.x + edit_rect.width))
-        {
-            if ((mouse_pos.y > edit_rect.y) && (mouse_pos.y < edit_rect.y + edit_rect.height))
-            {
-                s->cursor_x = (int)((mouse_pos.x + s->camera_x) / s->tile_w);
-                s->cursor_y = (int)((mouse_pos.y + s->camera_y) / s->tile_h);
-            }
-        }
-    }
-
-    input_action_t camera_left = {0};
-    input_action_add_key(&camera_left, KEY_A);
-
-    input_action_t camera_right = {0};
-    input_action_add_key(&camera_right, KEY_D);
-
-    input_action_t camera_down = {0};
-    input_action_add_key(&camera_down, KEY_S);
-
-    input_action_t camera_up = {0};
-    input_action_add_key(&camera_up, KEY_W);
-
-    if (input_action_is_held(&camera_right))
-    {
-        s->camera_x += CAMERA_SPEED;
-    }
-    else if (input_action_is_held(&camera_left))
-    {
-        s->camera_x -= CAMERA_SPEED;
-    }
-    if (input_action_is_held(&camera_down))
-    {
-        s->camera_y += CAMERA_SPEED;
-    }
-    else if (input_action_is_held(&camera_up))
-    {
-        s->camera_y -= CAMERA_SPEED;
-    }
-
-    if (is_pos_in_rect(mouse_pos.x, mouse_pos.y, edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h)))
-    {
-        s->draw_cursor = true;
-        editor_update_cursor(s);
-
-        int id = tilemap_get(&s->tilemap, s->cursor_x, s->cursor_y);
-
-        if (IsKeyPressed(KEY_ENTER))
-        {
-            if (id == TILE_EMPTY)
-            {
-                tilemap_set(&s->tilemap, s->cursor_x, s->cursor_y, 1);
-            }
-            else if (id != TILE_INVALID)
-            {
-                tilemap_set(&s->tilemap, s->cursor_x, s->cursor_y, TILE_EMPTY);
-            }
-
-            // Halt the cursor movement if we set a tile
-            s->cursor_first_move_ms = GetTime() * 1000;
-        }
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-        {
-            if (id == TILE_EMPTY)
-            {
-                tilemap_set(&s->tilemap, s->cursor_x, s->cursor_y, 1);
-            }
-        }
-        else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-        {
-            if (id != TILE_INVALID)
-            {
-                tilemap_set(&s->tilemap, s->cursor_x, s->cursor_y, TILE_EMPTY);
-            }
-        }
-    }
-    else
-    {
-        s->draw_cursor = false;
-    }
-}
-
-static void editor_update_cursor(editor_state_t* s)
-{
-    Rectangle edit_rect = edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h);
-    (void)edit_rect;
-
-    input_action_t cursor_left = {0};
-    input_action_add_key(&cursor_left, KEY_LEFT);
-
-    input_action_t cursor_right = {0};
-    input_action_add_key(&cursor_right, KEY_RIGHT);
-
-    input_action_t cursor_up = {0};
-    input_action_add_key(&cursor_up, KEY_UP);
-
-    input_action_t cursor_down = {0};
-    input_action_add_key(&cursor_down, KEY_DOWN);
-
-    if (input_action_is_pressed(&cursor_right))
-    {
-        s->cursor_x += 1;
-        s->cursor_first_move_ms = GetTime() * 1000;
-    }
-    else if (input_action_is_pressed(&cursor_left))
-    {
-        s->cursor_x -= 1;
-        s->cursor_first_move_ms = GetTime() * 1000;
-    }
-
-    if (input_action_is_pressed(&cursor_up))
-    {
-        s->cursor_y -= 1;
-        s->cursor_first_move_ms = GetTime() * 1000;
-    }
-    else if (input_action_is_pressed(&cursor_down))
-    {
-        s->cursor_y += 1;
-        s->cursor_first_move_ms = GetTime() * 1000;
-    }
-
-    if (input_action_is_held(&cursor_right))
-    {
-        s->cursor_x = editor_move_cursor_held(s, s->cursor_x, 1);
-
-    }
-    else if (input_action_is_held(&cursor_left))
-    {
-        s->cursor_x = editor_move_cursor_held(s, s->cursor_x, -1);
-    }
-
-    if (input_action_is_held(&cursor_down))
-    {
-        s->cursor_y = editor_move_cursor_held(s, s->cursor_y, 1);
-    }
-    else if (input_action_is_held(&cursor_up))
-    {
-        s->cursor_y = editor_move_cursor_held(s, s->cursor_y, -1);
-    }
-
-    if (s->cursor_x < 0) s->cursor_x = 0;
-    if (s->cursor_y < 0) s->cursor_y = 0;
-    if (s->cursor_x >= s->tilemap.width) s->cursor_x = s->tilemap.width-1;
-    if (s->cursor_y >= s->tilemap.height) s->cursor_y = s->tilemap.height-1;
-}
-
-static int editor_move_cursor_held(editor_state_t* s, int cursor_coord, int move)
-{
-    double time_ms = GetTime() * 1000;
-    if ((time_ms - s->cursor_first_move_ms) > CURSOR_HELD_DELAY)
-    {
-        if ((time_ms - s->cursor_last_move_ms) > CURSOR_HELD_MOVE_TIME)
-        {
-            s->cursor_last_move_ms = time_ms;
-
-            return cursor_coord += move;
-        }
-    }
-
-    return cursor_coord;
 }
 
 static void editor_draw(editor_state_t* s)
@@ -336,35 +131,7 @@ static void editor_draw(editor_state_t* s)
         editor_draw_cursor(s);
     }
 
-    Rectangle edit_area_r = edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h);
-    struct nk_rect rect;
-    rect.x = 0;
-    rect.y = 0;
-    rect.w = edit_area_r.x - s->edit_area.border_thickness - 50;
-    rect.h = (float)(s->window_h);
-
-    if (nk_begin(ctx, "Tileset", rect, NK_WINDOW_BORDER | NK_WINDOW_TITLE))
-    {
-        nk_style_push_font(ctx, &(s->nk_font));
-
-        nk_layout_row_dynamic(ctx, 0, 4);
-
-        struct nk_image img = nk_raylib_texture_to_image(asset_get_texture(ASSETS_PATH"block.png"));
-
-        for (int i = 0; i < 20; i++)
-        {
-            nk_button_image(ctx, img);
-        }
-//        struct nk_rect bounds;
-//        nk_widget(&bounds, ctx);
-
-//        DrawRectangle((int)bounds.x, (int)bounds.y, (int)bounds.w, (int)bounds.h, RED);
-
-//        DrawTexture(*asset_get_texture(ASSETS_PATH"block.png"), (int)(content_r.x), (int)(content_r.y), WHITE);
-
-        nk_style_pop_font(ctx);
-    }
-    nk_end(ctx);
+    editor_ui_tileset(s);
 
     nk_raylib_draw_commands(ctx);
 
@@ -412,11 +179,21 @@ static void editor_draw_tilemap(editor_state_t* s)
                 (float)s->tile_w, (float)s->tile_h
             };
 
-            if (tilemap_get(&(s->tilemap), tile_x, tile_y) != TILE_EMPTY)
+            int id = tilemap_get(&(s->tilemap), tile_x, tile_y);
+            if (id != TILE_EMPTY)
             {
-                Texture* texture = asset_get_texture(ASSETS_PATH"block.png");
+                const tile_t* tile = tileset_get_tile(&(s->tileset), id);
+                if (tile == NULL)
+                {
+                    continue;
+                }
 
-                assert(texture);
+                Texture* texture = asset_get_texture(tile->texture_path);
+                if (texture == NULL)
+                {
+                    continue;
+                }
+
                 Rectangle src = {
                     0, 0,
                     (float)(texture->width), (float)(texture->height)};
@@ -430,70 +207,4 @@ static void editor_draw_tilemap(editor_state_t* s)
             DrawRectangleLinesEx(tile_rect, 1, outline_color);
         }
     }
-}
-
-static void editor_draw_cursor(editor_state_t* s)
-{
-    Rectangle cursor_rect = {
-        (float)(s->cursor_x * s->tile_w) - s->camera_x, (float)(s->cursor_y * s->tile_h) - s->camera_y,
-        (float)s->tile_w, (float)s->tile_h
-    };
-
-    Rectangle edit_rect = edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h);
-
-    if (cursor_rect.x < edit_rect.x) return;
-    if (cursor_rect.y < edit_rect.y) return;
-    if ((cursor_rect.x + cursor_rect.width) > (edit_rect.x + edit_rect.width)) return;
-    if ((cursor_rect.y + cursor_rect.height) > (edit_rect.y + edit_rect.height)) return;
-
-    DrawRectangleLinesEx(cursor_rect, 1, GRAY);
-}
-
-static void input_action_add_key(input_action_t* a, int key)
-{
-    assert(a);
-
-    if (a->key_count >= INPUT_MAX_ACTION_KEYS)
-    {
-        return;
-    }
-
-    a->keys[a->key_count] = key;
-    a->key_count++;
-}
-
-static bool input_action_is_pressed(const input_action_t* a)
-{
-    if (a == NULL) return false;
-
-    for (int i = 0; i < a->key_count; i++)
-    {
-        if (IsKeyPressed(a->keys[i]))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static bool input_action_is_held(const input_action_t* a)
-{
-    if (a == NULL) return false;
-
-    for (int i = 0; i < a->key_count; i++)
-    {
-        if (IsKeyDown(a->keys[i]))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static bool is_pos_in_rect(float x, float y, Rectangle r)
-{
-    return ((x >= r.x) && (x <= (r.x + r.width)) &&
-            (y >= r.y) && (y <= (r.y + r.height)));
 }

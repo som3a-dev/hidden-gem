@@ -1,23 +1,16 @@
 #ifndef _EDITOR_H
 #define _EDITOR_H
 
+#include "asset.h"
+#include "edit_area.h"
+#include "input_action.h"
 #include "tilemap.h"
+#include "tileset.h"
 #include "nk_raylib.h"
 
 #include <raylib.h>
 
 #include <stdbool.h>
-
-// the edit/play area is defined as offsets from the window in the 4 directions
-// left right top bottom
-typedef struct
-{
-    int left;
-    int right;
-    int top;
-    int bottom;
-    int border_thickness;
-} edit_area_t;
 
 typedef struct
 {
@@ -35,7 +28,10 @@ typedef struct
 
     edit_area_t edit_area;
 
+    tileset_t tileset;
+
     tilemap_t tilemap;
+    int selected_tile_id;
     int tile_w;
     int tile_h;
 
@@ -50,8 +46,5 @@ typedef struct
 } editor_state_t;
 
 void run_editor();
-
-// returns an {x, y, w, h} rect from the edit area, given the window/viewport width and height
-Rectangle edit_area_get_rect(const edit_area_t* a, int window_w, int window_h);
 
 #endif
