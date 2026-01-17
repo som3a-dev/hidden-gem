@@ -1,6 +1,7 @@
 #include "nk_raylib.h"
-
 #include "editor_ui.h"
+
+#include <assert.h>
 
 void editor_update_ui_input(editor_state_t* s)
 {
@@ -38,19 +39,27 @@ void editor_update_ui_input(editor_state_t* s)
 void editor_ui_tileset(editor_state_t* s)
 {
     struct nk_context* ctx = &(s->nk_ctx);
+    assert(ctx);
 
-    Rectangle edit_area_r = edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h);
     struct nk_rect rect;
-    rect.x = 0;
-    rect.y = 0;
-    rect.w = edit_area_r.x - s->edit_area.border_thickness - 50;
-    rect.h = (float)(s->window_h);
+    {
+        Rectangle r = panel_layout_get_rect(&(s->tileset_panel), s->window_w, s->window_h, 4);
+        rect = nk_rect(r.x, r.y, (float)r.width, (float)r.height);
+    }
 
+    struct nk_color color;
+    color.r = 0;
+    color.g = 0;
+    color.b = 0;
+    color.a = 255;
+
+    nk_style_push_font(ctx, &(s->nk_font));
     if (nk_begin(ctx, "Tileset", rect, NK_WINDOW_BORDER | NK_WINDOW_TITLE))
     {
-        nk_style_push_font(ctx, &(s->nk_font));
+        struct nk_rect content_rect = nk_window_get_content_region(ctx);
 
-        nk_layout_row_dynamic(ctx, 0, 4);
+        int tiles_in_row = (int)(content_rect.w / s->tile_w) - 1;
+        nk_layout_row_static(ctx, (float)(s->tile_h), s->tile_w, tiles_in_row);
 
         for (int i = 0; i < TILES_CAPACITY; i++)
         {
@@ -81,8 +90,28 @@ void editor_ui_tileset(editor_state_t* s)
             nk_widget(&r, ctx);
             nk_draw_image(nk_window_get_canvas(ctx), r, &img, c);
         }
-
-        nk_style_pop_font(ctx);
     }
+    nk_style_pop_font(ctx);
+    nk_end(ctx);
+}
+
+void editor_ui_menu(editor_state_t* s)
+{
+    struct nk_context* ctx = &(s->nk_ctx);
+
+    struct nk_rect rect;
+    {
+        Rectangle r = panel_layout_get_rect(&(s->menu_panel), s->window_w, s->window_h, 4);
+        rect = nk_rect(r.x, r.y, (float)r.width, (float)r.height);
+    }
+
+    nk_style_push_font(ctx, &(s->nk_menu_font));
+    if (nk_begin(ctx, "Menu", rect, NK_WINDOW_BORDER))
+    {
+//        nk_layout_row_static(ctx, 24, 48, 12);
+        nk_button_label(ctx, "Open");
+        nk_button_label(ctx, "Save");
+    }
+    nk_style_pop_font(ctx);
     nk_end(ctx);
 }

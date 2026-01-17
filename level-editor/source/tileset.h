@@ -3,7 +3,7 @@
 
 #include "asset.h"
 
-#define TILES_CAPACITY 20
+#define TILES_CAPACITY 100
 #define SET_TILE_EMPTY 0 // if the id of tile_t is this value, it is an empty tileset tile (no tile)
 
 typedef struct

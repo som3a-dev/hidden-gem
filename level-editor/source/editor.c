@@ -8,11 +8,17 @@
 #include "editor_camera.h"
 #include "editor_ui.h"
 
+#include "vendor/cJSON.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+
+#define TOP_PANEL_HEIGHT 48
+#define LEFT_PANEL_WIDTH 256
+#define UI_PADDING 12
 
 static void editor_init(editor_state_t* s);
 static void editor_delete(editor_state_t* s);
@@ -23,6 +29,8 @@ static void editor_update_zoom(editor_state_t* s);
 static void editor_draw(editor_state_t* s);
 static void editor_draw_edit_area(editor_state_t* s);
 static void editor_draw_tilemap(editor_state_t* s);
+
+static void editor_load_tileset(editor_state_t* s, const char* filepath);
 
 static struct nk_context* ctx = NULL;
 
@@ -42,8 +50,8 @@ void run_editor()
 
 static void editor_init(editor_state_t* s)
 {
-    s->window_w = 1280;
-    s->window_h = 720;
+    s->window_w = 1920  - (16 * 12);
+    s->window_h = 1080  - ( 9 * 12);
 
 	InitWindow(s->window_w, s->window_h, "level-editor");
     SetTargetFPS(60);
@@ -54,28 +62,40 @@ static void editor_init(editor_state_t* s)
     s->tile_w = 32;
     s->tile_h = 32;
 
-    s->edit_area.left = 250;
-    s->edit_area.right = 250;
-    s->edit_area.top = 40;
-    s->edit_area.bottom = 200;
-    s->edit_area.border_thickness = 1;
+    const int left_panel_width = (int)(s->window_w * 0.2f);
+    const int top_panel_height = (int)(s->window_h * 0.07f);
 
-	s->bg_color.r = 60;
-    s->bg_color.g = 60;
-    s->bg_color.b = 60;
+    s->edit_area.right = (int)(s->window_w * 0.15f);
+    s->edit_area.bottom = (int)(s->window_h * 0.2f);
+    s->edit_area.top = (int)(s->window_h * 0.15f);
+    s->edit_area.left = (int)(left_panel_width * 1.05f + UI_PADDING);
+
+    s->tileset_panel.right = s->window_w - left_panel_width;
+    s->tileset_panel.left = UI_PADDING;
+    s->tileset_panel.bottom = (int)(s->window_h * 0.02f);
+    s->tileset_panel.top = top_panel_height + UI_PADDING;
+
+    s->menu_panel.left = UI_PADDING;
+    s->menu_panel.right = UI_PADDING;
+    s->menu_panel.top = UI_PADDING;
+    s->menu_panel.bottom = s->window_h - top_panel_height;
+
+	s->bg_color.r = 20;
+    s->bg_color.g = 20;
+    s->bg_color.b = 20;
     s->bg_color.a = 255;
 
 	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 24, NULL, 0);
-	s->nk_font = nk_raylib_create_user_font(&(s->font));
+	s->nk_font = nk_raylib_create_user_font(&(s->font), 24);
+    s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 16);
 
-    tileset_add_tile(&s->tileset, 1, ASSETS_PATH"dirt0.png");
-    tileset_add_tile(&s->tileset, 2, ASSETS_PATH"block.png");
+    editor_load_tileset(s, ASSETS_PATH"tileset.json");
 
     s->selected_tile_id = 1;
 
     tilemap_create(&(s->tilemap), s->window_w / s->tile_w, s->window_h / s->tile_h);
 
-    Rectangle edit_rect = edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h);
+    Rectangle edit_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
     s->cursor_x = (int)(edit_rect.x / s->tile_w) + 1;
     s->cursor_y = (int)(edit_rect.y / s->tile_h) + 1;
 
@@ -104,19 +124,18 @@ static void editor_update(editor_state_t* s)
 
 static void editor_update_zoom(editor_state_t* s)
 {
+    (s);
     if (IsKeyPressed(KEY_EQUAL))
     {
-        s->edit_area.border_thickness += 1;
     }
     else if (IsKeyPressed(KEY_MINUS))
     {
-        s->edit_area.border_thickness -= 1;
     }
 
-    if (s->edit_area.border_thickness < 1)
+/*    if (s->edit_area.border_thickness < 1)
     {
         s->edit_area.border_thickness = 1;
-    }
+    }*/
 }
 
 static void editor_draw(editor_state_t* s)
@@ -132,6 +151,7 @@ static void editor_draw(editor_state_t* s)
     }
 
     editor_ui_tileset(s);
+    editor_ui_menu(s);
 
     nk_raylib_draw_commands(ctx);
 
@@ -142,16 +162,9 @@ static void editor_draw(editor_state_t* s)
 
 static void editor_draw_edit_area(editor_state_t* s)
 {
-    Rectangle edit_area_rect = edit_area_get_rect(&(s->edit_area), s->window_w, s->window_h);
+    Rectangle edit_area_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
 
-    // account for border thickness since it takes from the original rect
-    // without this an edit area of border thickness 12 is smaller than of 6
-    edit_area_rect.x -= s->edit_area.border_thickness;
-    edit_area_rect.y -= s->edit_area.border_thickness;
-    edit_area_rect.width += s->edit_area.border_thickness * 2; // i don't know why this works
-    edit_area_rect.height += s->edit_area.border_thickness * 2;
-
-    DrawRectangleLinesEx(edit_area_rect, (float)(s->edit_area.border_thickness), BLACK);
+    DrawRectangleLinesEx(edit_area_rect, 4, BLACK);
 
     DrawRectangle(0, 0, (int)(edit_area_rect.x), s->window_h, s->bg_color);
     DrawRectangle(0, 0, s->window_w, (int)(edit_area_rect.y), s->bg_color);
@@ -207,4 +220,71 @@ static void editor_draw_tilemap(editor_state_t* s)
             DrawRectangleLinesEx(tile_rect, 1, outline_color);
         }
     }
+}
+
+static void editor_load_tileset(editor_state_t* s, const char* filepath)
+{
+    (s);
+    FILE* fp = fopen(filepath, "r");
+    if (fp == NULL)
+    {
+        return;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long bufsz = ftell(fp) + 1;
+    fseek(fp, 0, SEEK_SET);
+
+    char* buf = malloc(sizeof(char) * bufsz);
+    fread(buf, sizeof(char), bufsz, fp);
+    buf[bufsz-1] = '\0';
+
+    cJSON* json = cJSON_Parse(buf);
+    if (json == NULL)
+    {
+        printf("WARNING: Invalid tileset json format\n");
+        return;
+    }
+
+    if (cJSON_IsArray(json) == false)
+    {
+        printf("WARNING: Invalid tileset json format\n");
+        goto end;
+    }
+
+    for (int i = 0; i < cJSON_GetArraySize(json); i++)
+    {
+        cJSON* item = cJSON_GetArrayItem(json, i);
+        if (cJSON_IsObject(item) == false)
+        {
+            printf("WARNING: Invalid tileset json format\n");
+            goto end;
+        }
+
+        cJSON* texture_id_item = cJSON_GetObjectItem(item, "texture_id");
+        if (cJSON_IsString(texture_id_item) == false)
+        {
+            printf("WARNING: Invalid tileset json format\n");
+            goto end;
+        }
+
+        // TODO(): find a way to check if id is not an integer
+        int id = i + 1;
+        char* texture_id = cJSON_GetStringValue(texture_id_item);
+
+        size_t pathsz = sizeof(char) * (strlen(ASSETS_PATH) + strlen(texture_id) + 1);
+        char* path = malloc(pathsz);
+        strcpy(path, ASSETS_PATH);
+        strcpy(path + strlen(ASSETS_PATH), texture_id);
+        path[pathsz-1] = '\0';
+
+        tileset_add_tile(&(s->tileset), id, path);
+
+        free(path);
+    }
+
+    end:
+    fclose(fp);
+    free(buf);
+    cJSON_Delete(json);
 }

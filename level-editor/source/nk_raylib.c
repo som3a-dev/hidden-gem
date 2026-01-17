@@ -7,13 +7,13 @@
 static Color nk_to_rl_color(struct nk_color color);
 static float nk_font_width_callback(nk_handle handle, float height, const char *text, int len);
 
-struct nk_user_font nk_raylib_create_user_font(const Font* font)
+struct nk_user_font nk_raylib_create_user_font(const Font* font, int height)
 {
 	struct nk_user_font nk_font = {0};
 
     if (font == NULL) return nk_font;
 
-	nk_font.height = (float)(font->baseSize);	
+	nk_font.height = (float)(height);	
 	nk_font.userdata.ptr = (void*)(font);
 	nk_font.width = nk_font_width_callback;
 
@@ -153,6 +153,6 @@ static float nk_font_width_callback(nk_handle handle, float height, const char *
 		return 0;
 	}
 
-    float text_width = MeasureTextEx(*font, text, (float)(font->baseSize), 0).x;
+    float text_width = MeasureTextEx(*font, text, (float)(height), 0).x;
     return text_width;
 }

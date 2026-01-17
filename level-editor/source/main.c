@@ -5,6 +5,8 @@
 
 #include "editor.h"
 
+#include <stdio.h>
+
 static void init_crtdbg();
 static void dump_crtdbg();
 

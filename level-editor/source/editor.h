@@ -2,7 +2,7 @@
 #define _EDITOR_H
 
 #include "asset.h"
-#include "edit_area.h"
+#include "panel.h"
 #include "input_action.h"
 #include "tilemap.h"
 #include "tileset.h"
@@ -17,8 +17,9 @@ typedef struct
     int window_w;
     int window_h;
 
-    struct nk_user_font nk_font;
     struct nk_context nk_ctx;
+    struct nk_user_font nk_font;
+    struct nk_user_font nk_menu_font;
     Font font;
 
     Color bg_color;
@@ -26,7 +27,9 @@ typedef struct
     bool mouse_moved; // did the mouse move last frame
     Vector2 prev_mouse_pos;
 
-    edit_area_t edit_area;
+    panel_layout_t edit_area;
+    panel_layout_t tileset_panel;
+    panel_layout_t menu_panel;
 
     tileset_t tileset;
 
