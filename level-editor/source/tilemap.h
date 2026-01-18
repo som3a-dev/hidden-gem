@@ -2,6 +2,10 @@
 #define _TILEMAP_H
 
 #define TILE_EMPTY 0
+
+// This tile id is reserved and only used when saving and loading the tilemap to a file
+// It signifies a new row in the map (everytime you see it the tile after it is the start of a new row)
+#define TILE_ROW 0xef
 #define TILE_INVALID -6767 // invalid position
 
 /*
@@ -28,5 +32,8 @@ int tilemap_get(const tilemap_t* map, int x, int y);
 // sets the tile at index (x, y) to the specified value
 // does not set if the value is an invalid tile id (like TILE_INVALID)
 void tilemap_set(tilemap_t* map, int x, int y, int val);
+
+// returns the array storing the tilemap data
+const int* tilemap_get_data(const tilemap_t* map);
 
 #endif

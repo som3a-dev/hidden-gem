@@ -50,4 +50,9 @@ typedef struct
 
 void run_editor();
 
+// TODO(omar): move these to a editor_io component or something, they shouldn't be exposed like this
+void editor_load_tileset(editor_state_t* s, const char* filepath);
+void editor_open_map(editor_state_t* s, const char* filepath);
+void editor_save_map(editor_state_t* s, const char* filepath);
+
 #endif

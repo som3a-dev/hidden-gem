@@ -1,5 +1,6 @@
 #include "nk_raylib.h"
 #include "editor_ui.h"
+#include "log.h"
 
 #include <assert.h>
 
@@ -108,9 +109,15 @@ void editor_ui_menu(editor_state_t* s)
     nk_style_push_font(ctx, &(s->nk_menu_font));
     if (nk_begin(ctx, "Menu", rect, NK_WINDOW_BORDER))
     {
-//        nk_layout_row_static(ctx, 24, 48, 12);
-        nk_button_label(ctx, "Open");
-        nk_button_label(ctx, "Save");
+        nk_layout_row_static(ctx, rect.h * 0.7f, (int)(rect.h * 2.0f), 2);
+        if (nk_button_label(ctx, "Open"))
+        {
+            editor_open_map(s, "map.lem");
+        }
+        if (nk_button_label(ctx, "Save"))
+        {
+            editor_save_map(s, "map.lem");
+        }
     }
     nk_style_pop_font(ctx);
     nk_end(ctx);

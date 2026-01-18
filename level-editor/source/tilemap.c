@@ -72,3 +72,13 @@ void tilemap_set(tilemap_t* map, int x, int y, int val)
 
     map->_tiles[x + (y * map->width)] = val;
 }
+
+const int* tilemap_get_data(const tilemap_t* map)
+{
+    if (map == NULL)
+    {
+        return NULL;
+    }
+
+    return map->_tiles;
+}

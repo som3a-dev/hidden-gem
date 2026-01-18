@@ -8,6 +8,8 @@
 #include "editor_camera.h"
 #include "editor_ui.h"
 
+#include "log.h"
+
 #include "vendor/cJSON.h"
 
 #include <assert.h>
@@ -29,8 +31,6 @@ static void editor_update_zoom(editor_state_t* s);
 static void editor_draw(editor_state_t* s);
 static void editor_draw_edit_area(editor_state_t* s);
 static void editor_draw_tilemap(editor_state_t* s);
-
-static void editor_load_tileset(editor_state_t* s, const char* filepath);
 
 static struct nk_context* ctx = NULL;
 
@@ -85,15 +85,15 @@ static void editor_init(editor_state_t* s)
     s->bg_color.b = 20;
     s->bg_color.a = 255;
 
-	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 24, NULL, 0);
+	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 48, NULL, 0);
 	s->nk_font = nk_raylib_create_user_font(&(s->font), 24);
-    s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 16);
+    s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 36);
 
     editor_load_tileset(s, ASSETS_PATH"tileset.json");
 
     s->selected_tile_id = 1;
 
-    tilemap_create(&(s->tilemap), s->window_w / s->tile_w, s->window_h / s->tile_h);
+    tilemap_create(&(s->tilemap), 4, 4);
 
     Rectangle edit_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
     s->cursor_x = (int)(edit_rect.x / s->tile_w) + 1;
@@ -222,7 +222,7 @@ static void editor_draw_tilemap(editor_state_t* s)
     }
 }
 
-static void editor_load_tileset(editor_state_t* s, const char* filepath)
+void editor_load_tileset(editor_state_t* s, const char* filepath)
 {
     (s);
     FILE* fp = fopen(filepath, "r");
@@ -287,4 +287,61 @@ static void editor_load_tileset(editor_state_t* s, const char* filepath)
     fclose(fp);
     free(buf);
     cJSON_Delete(json);
+}
+
+void editor_open_map(editor_state_t* s, const char* filepath)
+{
+    FILE* fp = fopen(filepath, "rb");
+    if (fp == NULL)
+    {
+        LOG_WARNING("Opening file '%s' for reading failed", filepath);
+        return;
+    }
+
+    int tile;
+    int x = 0;
+    int y = 0;
+    while (feof(fp) == false)
+    {
+        fread(&tile, sizeof(tile), 1, fp);
+        if (tile == TILE_ROW)
+        {
+            y++;
+            x = 0;
+            continue;
+        }
+
+        tilemap_set(&(s->tilemap), x, y, tile);
+        x++;
+    }
+
+    fclose(fp);
+}
+
+void editor_save_map(editor_state_t* s, const char* filepath)
+{
+    FILE* fp = fopen(filepath, "wb");
+    if (fp == NULL)
+    {
+        LOG_WARNING("Opening file '%s' for saving failed", filepath);
+        return;
+    }
+
+    const int* data = tilemap_get_data(&(s->tilemap));
+    if (data == NULL)
+    {
+        LOG_WARNING("No map exists to save to file '%s'", filepath);
+        return;
+    }
+
+    const int* row = data;
+    const int row_seperator = TILE_ROW;
+    for (int i = 0; i < s->tilemap.height; i++)
+    {
+        fwrite(row, sizeof(*row), s->tilemap.width, fp);
+        fwrite(&row_seperator, sizeof(row_seperator), 1, fp);
+        row += s->tilemap.width;
+    }
+
+    fclose(fp);
 }
