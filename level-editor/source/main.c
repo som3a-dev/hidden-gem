@@ -4,6 +4,7 @@
 #endif
 
 #include "editor.h"
+#include "log.h"
 
 #include <stdio.h>
 
@@ -16,7 +17,11 @@ int main(void)
 	init_crtdbg();
     #endif
 
+    log_init();
+
 	run_editor();
+
+    log_close();
 
     #ifdef _DEBUG
 	dump_crtdbg();
