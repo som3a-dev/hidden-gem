@@ -26,7 +26,6 @@ static void editor_init(editor_state_t* s);
 static void editor_delete(editor_state_t* s);
 
 static void editor_update(editor_state_t* s);
-static void editor_update_zoom(editor_state_t* s);
 
 static void editor_draw(editor_state_t* s);
 static void editor_draw_edit_area(editor_state_t* s);
@@ -62,7 +61,8 @@ static void editor_init(editor_state_t* s)
     s->tile_w = 32;
     s->tile_h = 32;
 
-    const int left_panel_width = (int)(s->window_w * 0.2f);
+    const int left_panel_width = (int)(s->window_w * 0.1f);
+    const int right_panel_width = (int)(left_panel_width * 1.3f);
     const int top_panel_height = (int)(s->window_h * 0.07f);
 
     s->edit_area.right = (int)(s->window_w * 0.15f);
@@ -80,27 +80,36 @@ static void editor_init(editor_state_t* s)
     s->menu_panel.top = UI_PADDING;
     s->menu_panel.bottom = s->window_h - top_panel_height;
 
+    s->right_panel.left = (int)(s->window_w - right_panel_width);
+    s->right_panel.right = UI_PADDING;
+    s->right_panel.bottom = UI_PADDING;
+    s->right_panel.top = top_panel_height + UI_PADDING;
+
 	s->bg_color.r = 20;
     s->bg_color.g = 20;
     s->bg_color.b = 20;
     s->bg_color.a = 255;
 
 	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 48, NULL, 0);
-	s->nk_font = nk_raylib_create_user_font(&(s->font), 24);
+	s->nk_title_font = nk_raylib_create_user_font(&(s->font), 24);
     s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 36);
+    s->nk_inner_font = nk_raylib_create_user_font(&(s->font), 20);
 
     editor_load_tileset(s, ASSETS_PATH"tileset.json");
 
     s->selected_tile_id = 1;
 
-    tilemap_create(&(s->tilemap), 4, 4);
+    tilemap_create(&(s->tilemap), 48, 48);
 
     Rectangle edit_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
     s->cursor_x = (int)(edit_rect.x / s->tile_w) + 1;
     s->cursor_y = (int)(edit_rect.y / s->tile_h) + 1;
 
+    s->camera_x = -(s->edit_area.left + s->tile_w);
+    s->camera_y = -(s->edit_area.top + s->tile_h);
+
     ctx = &(s->nk_ctx);
-	nk_init_default(ctx, &(s->nk_font));
+	nk_init_default(ctx, &(s->nk_title_font));
 }
 
 static void editor_delete(editor_state_t* s)
@@ -116,26 +125,9 @@ static void editor_delete(editor_state_t* s)
 
 static void editor_update(editor_state_t* s)
 {
-    editor_update_ui_input(s);
-    editor_update_zoom(s);
+    editor_update_ui(s);
     editor_update_camera(s);
     editor_update_cursor(s);
-}
-
-static void editor_update_zoom(editor_state_t* s)
-{
-    (s);
-    if (IsKeyPressed(KEY_EQUAL))
-    {
-    }
-    else if (IsKeyPressed(KEY_MINUS))
-    {
-    }
-
-/*    if (s->edit_area.border_thickness < 1)
-    {
-        s->edit_area.border_thickness = 1;
-    }*/
 }
 
 static void editor_draw(editor_state_t* s)
@@ -150,8 +142,7 @@ static void editor_draw(editor_state_t* s)
         editor_draw_cursor(s);
     }
 
-    editor_ui_tileset(s);
-    editor_ui_menu(s);
+    editor_draw_ui(s);
 
     nk_raylib_draw_commands(ctx);
 

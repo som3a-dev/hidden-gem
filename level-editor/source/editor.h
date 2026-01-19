@@ -18,8 +18,10 @@ typedef struct
     int window_h;
 
     struct nk_context nk_ctx;
-    struct nk_user_font nk_font;
+    struct nk_user_font nk_title_font;
     struct nk_user_font nk_menu_font;
+    struct nk_user_font nk_inner_font;
+
     Font font;
 
     Color bg_color;
@@ -30,6 +32,7 @@ typedef struct
     panel_layout_t edit_area;
     panel_layout_t tileset_panel;
     panel_layout_t menu_panel;
+    panel_layout_t right_panel;
 
     tileset_t tileset;
 

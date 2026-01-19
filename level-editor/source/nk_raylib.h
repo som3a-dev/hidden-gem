@@ -16,4 +16,6 @@ struct nk_image nk_raylib_texture_to_image(Texture* tex);
 // frees memory allocated in a nk_image returned by nk_raylib_texture_to_image
 void nk_raylib_free_image(struct nk_image* img);
 
+struct nk_color rl_to_nk_color(Color color);
+
 #endif

@@ -3,8 +3,7 @@
 
 #include "editor.h"
 
-void editor_update_ui_input(editor_state_t* s);
-void editor_ui_tileset(editor_state_t* s);
-void editor_ui_menu(editor_state_t* s);
+void editor_update_ui(editor_state_t* s);
+void editor_draw_ui(editor_state_t* s);
 
 #endif
