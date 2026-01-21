@@ -62,6 +62,110 @@ void nk_raylib_free_image(struct nk_image* img)
     free(img->handle.ptr);
 }
 
+struct nk_raylib_input_keyboard_check {
+    int key;
+    int input_key;
+    bool modifier;
+};
+
+void nk_raylib_update_input(struct nk_context* ctx)
+{
+    ctx->delta_time_seconds = GetFrameTime();
+
+    nk_input_begin(ctx);
+    // Mouse
+    const int mouseX = (int)((float)GetMouseX());
+    const int mouseY = (int)((float)GetMouseY());
+
+    nk_input_motion(ctx, mouseX, mouseY);
+    nk_input_button(ctx, NK_BUTTON_LEFT, mouseX, mouseY, IsMouseButtonDown(MOUSE_LEFT_BUTTON));
+    nk_input_button(ctx, NK_BUTTON_RIGHT, mouseX, mouseY, IsMouseButtonDown(MOUSE_RIGHT_BUTTON));
+    nk_input_button(ctx, NK_BUTTON_MIDDLE, mouseX, mouseY, IsMouseButtonDown(MOUSE_MIDDLE_BUTTON));
+
+    // Mouse Wheel
+    float mouseWheel = GetMouseWheelMove();
+    if (mouseWheel != 0.0f) {
+        struct nk_vec2 mouseWheelMove;
+        mouseWheelMove.x = 0.0f;
+        mouseWheelMove.y = mouseWheel;
+        nk_input_scroll(ctx, mouseWheelMove);
+    }
+
+    bool control = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
+    bool command = IsKeyDown(KEY_LEFT_SUPER);
+    bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+    struct nk_raylib_input_keyboard_check checks[] = {
+        (struct nk_raylib_input_keyboard_check) {KEY_DELETE, NK_KEY_DEL, true},
+        (struct nk_raylib_input_keyboard_check) {KEY_ENTER, NK_KEY_ENTER, true},
+//        (struct nk_raylib_input_keyboard_check) {KEY_BACKSPACE, NK_KEY_BACKSPACE, true},
+        (struct nk_raylib_input_keyboard_check) {KEY_C, NK_KEY_COPY, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_V, NK_KEY_PASTE, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_B, NK_KEY_TEXT_LINE_START, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_E, NK_KEY_TEXT_LINE_END, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_Z, NK_KEY_TEXT_UNDO, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_R, NK_KEY_TEXT_REDO, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_A, NK_KEY_TEXT_SELECT_ALL, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_LEFT, NK_KEY_TEXT_WORD_LEFT, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_RIGHT, NK_KEY_TEXT_WORD_RIGHT, (control || command)},
+        (struct nk_raylib_input_keyboard_check) {KEY_RIGHT, NK_KEY_RIGHT, true},
+        (struct nk_raylib_input_keyboard_check) {KEY_LEFT, NK_KEY_LEFT, true},
+        (struct nk_raylib_input_keyboard_check) {KEY_UP, NK_KEY_UP, true},
+        (struct nk_raylib_input_keyboard_check) {KEY_DOWN, NK_KEY_DOWN, true}
+    };
+
+    const int checks_count = sizeof(checks) / sizeof(struct nk_raylib_input_keyboard_check);
+    bool checked = false;
+    for (int i = 0; i < checks_count; i++) {
+        struct nk_raylib_input_keyboard_check check = checks[i];
+        if (IsKeyDown(check.key) && check.modifier) {
+            nk_input_key(ctx, (enum nk_keys)check.input_key, true);
+            checked = true;
+        } else {
+            nk_input_key(ctx, (enum nk_keys)check.input_key, false);
+        }
+    }
+    #undef NK_RAYLIB_INPUT_KEYBOARD_CHECK_NUM
+
+    nk_input_key(ctx, NK_KEY_SHIFT, shift);
+
+    if (checked) {
+        return;
+    }
+
+    nk_input_key(ctx, NK_KEY_LEFT, IsKeyDown(KEY_LEFT));
+    nk_input_key(ctx, NK_KEY_RIGHT, IsKeyDown(KEY_RIGHT));
+    nk_input_key(ctx, NK_KEY_UP, IsKeyDown(KEY_UP));
+    nk_input_key(ctx, NK_KEY_DOWN, IsKeyDown(KEY_DOWN));
+    nk_input_key(ctx, NK_KEY_TEXT_START, IsKeyDown(KEY_HOME));
+    nk_input_key(ctx, NK_KEY_TEXT_END, IsKeyDown(KEY_END));
+    nk_input_key(ctx, NK_KEY_SCROLL_START, IsKeyDown(KEY_HOME) && control);
+    nk_input_key(ctx, NK_KEY_SCROLL_END, IsKeyDown(KEY_END) && control);
+    nk_input_key(ctx, NK_KEY_SCROLL_DOWN, IsKeyDown(KEY_PAGE_DOWN));
+    nk_input_key(ctx, NK_KEY_SCROLL_UP, IsKeyDown(KEY_PAGE_UP));
+
+    // Functions
+    if (IsKeyPressed(KEY_TAB)) nk_input_unicode(ctx, 9);
+
+    // Unicode
+    int code;
+    while ((code = GetCharPressed()) != 0)
+        nk_input_unicode(ctx, (nk_rune)code);
+
+
+    // Edge case for backspace, because IsKeyDown() isn't quite the right behavior
+    // Maybe report this to the raylib nuklear implementation on github
+    if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE))
+    {
+        nk_input_key(ctx, NK_KEY_BACKSPACE, true);
+    }
+    else
+    {
+        nk_input_key(ctx, NK_KEY_BACKSPACE, false);
+    }
+
+    nk_input_end(ctx);
+}
+
 void nk_raylib_draw_commands(struct nk_context* ctx)
 {
     if (ctx == NULL) return;

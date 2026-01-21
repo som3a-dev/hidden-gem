@@ -30,6 +30,34 @@ void tilemap_delete(tilemap_t *map)
     map->height = 0;
 }
 
+void tilemap_resize(tilemap_t* map, int width, int height)
+{
+    if (map == NULL)
+    {
+        return;
+    }
+    if ((width <= 0) || (height <= 0))
+    {
+        return;
+    }
+    if ((width == map->width) && (height == map->height))
+    {
+        return;
+    }
+
+    size_t new_sz = sizeof(*(map->_tiles)) * (width * height);
+    size_t old_sz = sizeof(*(map->_tiles)) * (map->width * map->height);
+
+    map->_tiles = realloc(map->_tiles, new_sz);
+    if (old_sz < new_sz)
+    {
+        memset(map->_tiles + (map->width * map->height), TILE_EMPTY, new_sz - old_sz);
+    }
+
+    map->width = width;
+    map->height = height;
+}
+
 int tilemap_get(const tilemap_t *map, int x, int y)
 {
     if (map == NULL) {

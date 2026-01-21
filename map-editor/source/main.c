@@ -5,6 +5,7 @@
 
 #include "editor.h"
 #include "log.h"
+#include "map_format.h"
 
 #include <stdio.h>
 

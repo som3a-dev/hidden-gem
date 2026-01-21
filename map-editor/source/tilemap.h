@@ -26,6 +26,8 @@ void tilemap_create(tilemap_t* map, int width, int height);
 // deletes the tilemap data and NULLs it
 void tilemap_delete(tilemap_t* map);
 
+void tilemap_resize(tilemap_t* map, int width, int height);
+
 // returns the tile at index (x, y)
 int tilemap_get(const tilemap_t* map, int x, int y);
 

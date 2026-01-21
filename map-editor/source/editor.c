@@ -125,6 +125,19 @@ static void editor_delete(editor_state_t* s)
 
 static void editor_update(editor_state_t* s)
 {
+    const int mouseX = (int)((float)GetMouseX());
+    const int mouseY = (int)((float)GetMouseY());
+
+    if ((mouseX != s->prev_mouse_pos.x) || (mouseY != s->prev_mouse_pos.y))
+    {
+        s->mouse_moved = true;
+    }
+    else
+    {
+        s->mouse_moved = false;
+    }
+    s->prev_mouse_pos = (Vector2){(float)mouseX, (float)mouseY};
+
     editor_update_ui(s);
     editor_update_camera(s);
     editor_update_cursor(s);
@@ -233,13 +246,13 @@ void editor_load_tileset(editor_state_t* s, const char* filepath)
     cJSON* json = cJSON_Parse(buf);
     if (json == NULL)
     {
-        printf("WARNING: Invalid tileset json format\n");
+        LOG_WARNING("Invalid tileset json format");
         return;
     }
 
     if (cJSON_IsArray(json) == false)
     {
-        printf("WARNING: Invalid tileset json format\n");
+        LOG_WARNING("Invalid tileset json format");
         goto end;
     }
 
@@ -248,14 +261,14 @@ void editor_load_tileset(editor_state_t* s, const char* filepath)
         cJSON* item = cJSON_GetArrayItem(json, i);
         if (cJSON_IsObject(item) == false)
         {
-            printf("WARNING: Invalid tileset json format\n");
+            LOG_WARNING("Invalid tileset json format");
             goto end;
         }
 
         cJSON* texture_id_item = cJSON_GetObjectItem(item, "texture_id");
         if (cJSON_IsString(texture_id_item) == false)
         {
-            printf("WARNING: Invalid tileset json format\n");
+            LOG_WARNING("Invalid tileset json format");
             goto end;
         }
 
@@ -288,6 +301,13 @@ void editor_open_map(editor_state_t* s, const char* filepath)
         LOG_WARNING("Opening file '%s' for reading failed", filepath);
         return;
     }
+
+    int map_width;
+    int map_height;
+    fread(&map_width, sizeof(int), 1, fp);
+    fread(&map_height, sizeof(int), 1, fp);
+
+    tilemap_resize(&(s->tilemap), map_width, map_height);
 
     int tile;
     int x = 0;
@@ -324,6 +344,9 @@ void editor_save_map(editor_state_t* s, const char* filepath)
         LOG_WARNING("No map exists to save to file '%s'", filepath);
         return;
     }
+
+    fwrite(&(s->tilemap.width), sizeof(int), 1, fp);
+    fwrite(&(s->tilemap.height), sizeof(int), 1, fp);
 
     const int* row = data;
     const int row_seperator = TILE_ROW;

@@ -6,6 +6,7 @@
 
 #include <raylib.h>
 
+void nk_raylib_update_input(struct nk_context* ctx);
 void nk_raylib_draw_commands(struct nk_context* ctx);
 
 // Creates/Fills out a nk_user_font from a raylib Font
