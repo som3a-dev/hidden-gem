@@ -34,6 +34,7 @@
     *MAPS* (.hgm extension)
     Maps are defined with a propreitary format that is defined as, in order:
     - A Tilemap:
+        - A header for the file format, defined by the code itself
         - Two 4 byte signed integers defining the width and height of the tilemap
         - Tightly packed 4 byte signed integer tile ids that define the tiles
         in the tilemap
@@ -74,6 +75,9 @@ extern "C"
 
 // This id signifies an empty tile
 #define MF_TILE_EMPTY 0
+
+#define MF_MAX_TILEMAP_WIDTH  5000
+#define MF_MAX_TILEMAP_HEIGHT 5000
 
 typedef int32_t mf_tileid_t;
 typedef uint32_t mf_mapsz_t;
