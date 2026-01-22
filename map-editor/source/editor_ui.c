@@ -92,13 +92,13 @@ static void editor_ui_menu(editor_state_t* s)
         nk_layout_row_push(ctx, (rect.h * 1.6f));
         if (nk_button_label(ctx, "Open"))
         {
-            char* filepath = dialog_select_file();
+            char* filepath = dialog_select_file(DIALOG_SELECT_FILE_OPEN);
             editor_open_map(s, filepath);
             free(filepath);
         }
         if (nk_button_label(ctx, "Save"))
         {
-            char* filepath = dialog_select_file();
+            char* filepath = dialog_select_file(DIALOG_SELECT_FILE_SAVE);
             editor_save_map(s, filepath);
             free(filepath);
         }

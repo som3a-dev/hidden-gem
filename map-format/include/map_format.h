@@ -32,6 +32,7 @@
     Below is a comprehensive list of the formats that are defined:
 
     *MAPS* (.hgm extension)
+    NOTE: The .hgm extension is not a requirement, you can use any extension you like, but it is recommended to use .hgm for clarity (hidden gem map)
     Maps are defined with a propreitary format that is defined as, in order:
     - A Tilemap:
         - A header for the file format, defined by the code itself
