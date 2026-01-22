@@ -45,17 +45,20 @@ void tilemap_resize(tilemap_t* map, int width, int height)
         return;
     }
 
-    size_t new_sz = sizeof(*(map->_tiles)) * (width * height);
-    size_t old_sz = sizeof(*(map->_tiles)) * (map->width * map->height);
+    tilemap_t new_map;
+    tilemap_create(&new_map, width, height);
+    tilemap_t old_map = *map;
 
-    map->_tiles = realloc(map->_tiles, new_sz);
-    if (old_sz < new_sz)
+    for (int y = 0; y < old_map.height; y++)
     {
-        memset(map->_tiles + (map->width * map->height), TILE_EMPTY, new_sz - old_sz);
+        for (int x = 0; x < old_map.width; x++)
+        {
+            tilemap_set(&new_map, x, y, tilemap_get(&old_map, x, y));
+        }
     }
 
-    map->width = width;
-    map->height = height;
+    *map = new_map;
+    tilemap_delete(&old_map);
 }
 
 int tilemap_get(const tilemap_t *map, int x, int y)

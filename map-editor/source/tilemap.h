@@ -1,12 +1,11 @@
 #ifndef _TILEMAP_H
 #define _TILEMAP_H
 
-#define TILE_EMPTY 0
+#include "map_format.h"
 
-// This tile id is reserved and only used when saving and loading the tilemap to a file
-// It signifies a new row in the map (everytime you see it the tile after it is the start of a new row)
-#define TILE_ROW 0xef
-#define TILE_INVALID -6767 // invalid position
+#define TILE_EMPTY MF_TILE_EMPTY
+
+#define TILE_INVALID MF_TILE_INVALID
 
 /*
 *

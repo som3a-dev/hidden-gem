@@ -19,6 +19,14 @@
         - The API is abbreviated as mf or MF.
         - All memory ownership rules are defined per-function. there is no hard standard for now.
 
+        - Notes about certain types:
+            - mf_tileid_t is a signed 32 bit integer type that is used for tile ids
+            a tile id of 0 signifies an empty tile,
+            tile ids of negative numbers should not be used, as they are left for
+            reserved tile ids used by the format.
+            
+            - mf_mapsz_t is a unsigned 32 bit integer type that is used for the dimensions
+            and positions in a tilemap
 
 
     Below is a comprehensive list of the formats that are defined:
@@ -46,17 +54,78 @@
     and if there are none you get the file as a normal null terminated string.
 */
 
+#ifndef _MAP_FORMAT_H
+#define _MAP_FORMAT_H
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#include <stdbool.h>
+#include <stdint.h>
+
+// This id signifies a new row in the map (everytime you see it in the file, the tile after it is the start of a new row)
+#define MF_TILE_ROW -2
+
+// This id signifies an invalid tile, this is only used as a return value for some API functions
+// that return a mf_tileid_t
+#define MF_TILE_INVALID -1
+
+// This id signifies an empty tile
+#define MF_TILE_EMPTY 0
+
+typedef int32_t mf_tileid_t;
+typedef uint32_t mf_mapsz_t;
+
 typedef struct
 {
+    // Size in tiles
+    mf_mapsz_t w; 
+    mf_mapsz_t h; 
 
+    // Tiles packed in 1d array
+    mf_tileid_t* tiles;
 } mf_tilemap_t;
 
+/*
+* Loads a tilemap from a map file
+* the map's tiles array is allocated on the heap, caller should free() after use or call mf_tilemap_destroy
+* Returns an empty mf_tilemap_t (zeroed out) if the file was invalid (invalid format/doesn't exist)
+*/
+mf_tilemap_t mf_load_tilemap(const char* filepath);
+
+/*
+* Saves a tilemap into a file
+* Overwrites anything in the file if it exists
+* returns true/false on success/failure
+*/
+bool mf_save_tilemap(const char* filepath, const mf_tilemap_t* map);
+
+/*
+* Creates an empty tilemap (filled with MF_TILE_EMPTY) of the desired size
+* Returns a zeroed out mf_tilemap_t on failure
+*/
+mf_tilemap_t mf_tilemap_create(mf_mapsz_t w, mf_mapsz_t h);
+
+/*
+* Frees memory allocated in a tilemap returned by mf_create_tilemap
+*/
+void mf_tilemap_destroy(mf_tilemap_t* map);
+
+/*
+* Sets a tile in the tilemap to a specified value
+*/
+void mf_tilemap_set(mf_tilemap_t* map, mf_mapsz_t x, mf_mapsz_t y, mf_tileid_t tile);
+
+/*
+* Gets the tile in a tilemap at a specified position
+* Returns a MF_TILE_INVALID on failure
+*/
+mf_tileid_t mf_tilemap_get(const mf_tilemap_t* map, mf_mapsz_t x, mf_mapsz_t y);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

@@ -8,6 +8,8 @@
 #include "editor_camera.h"
 #include "editor_ui.h"
 
+#include "map_format.h"
+
 #include "log.h"
 
 #include "vendor/cJSON.h"
@@ -295,67 +297,49 @@ void editor_load_tileset(editor_state_t* s, const char* filepath)
 
 void editor_open_map(editor_state_t* s, const char* filepath)
 {
-    FILE* fp = fopen(filepath, "rb");
-    if (fp == NULL)
+    mf_tilemap_t map = mf_load_tilemap(filepath);
+
+    tilemap_resize(&(s->tilemap), map.w, map.h);
+
+    for (mf_mapsz_t y = 0; y < map.h; y++)
     {
-        LOG_WARNING("Opening file '%s' for reading failed", filepath);
-        return;
-    }
-
-    int map_width;
-    int map_height;
-    fread(&map_width, sizeof(int), 1, fp);
-    fread(&map_height, sizeof(int), 1, fp);
-
-    tilemap_resize(&(s->tilemap), map_width, map_height);
-
-    int tile;
-    int x = 0;
-    int y = 0;
-    while (feof(fp) == false)
-    {
-        fread(&tile, sizeof(tile), 1, fp);
-        if (tile == TILE_ROW)
+        for (mf_mapsz_t x = 0; x < map.w; x++)
         {
-            y++;
-            x = 0;
-            continue;
+            mf_tileid_t tile = mf_tilemap_get(&map, x, y);
+            if (tile == MF_TILE_EMPTY)
+            {
+                tilemap_set(&(s->tilemap), x, y, TILE_EMPTY);
+            }
+            else
+            {
+                tilemap_set(&(s->tilemap), x, y, tile);
+            }
         }
-
-        tilemap_set(&(s->tilemap), x, y, tile);
-        x++;
     }
 
-    fclose(fp);
+    mf_tilemap_destroy(&map);
 }
 
 void editor_save_map(editor_state_t* s, const char* filepath)
 {
-    FILE* fp = fopen(filepath, "wb");
-    if (fp == NULL)
+    mf_tilemap_t map = mf_tilemap_create(s->tilemap.width, s->tilemap.height);
+    for (int y = 0; y < s->tilemap.height; y++)
     {
-        LOG_WARNING("Opening file '%s' for saving failed", filepath);
-        return;
+        for (int x = 0; x < s->tilemap.width; x++)
+        {
+            int tile = tilemap_get(&(s->tilemap), x, y);
+            if (tile == TILE_EMPTY)
+            {
+                mf_tilemap_set(&map, x, y, MF_TILE_EMPTY);
+            }
+            else
+            {
+                mf_tilemap_set(&map, x, y, tile);
+            }
+        }
     }
 
-    const int* data = tilemap_get_data(&(s->tilemap));
-    if (data == NULL)
-    {
-        LOG_WARNING("No map exists to save to file '%s'", filepath);
-        return;
-    }
+    mf_save_tilemap(filepath, &map);
 
-    fwrite(&(s->tilemap.width), sizeof(int), 1, fp);
-    fwrite(&(s->tilemap.height), sizeof(int), 1, fp);
-
-    const int* row = data;
-    const int row_seperator = TILE_ROW;
-    for (int i = 0; i < s->tilemap.height; i++)
-    {
-        fwrite(row, sizeof(*row), s->tilemap.width, fp);
-        fwrite(&row_seperator, sizeof(row_seperator), 1, fp);
-        row += s->tilemap.width;
-    }
-
-    fclose(fp);
+    mf_tilemap_destroy(&map);
 }
