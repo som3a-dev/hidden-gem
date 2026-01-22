@@ -10,6 +10,10 @@ mf_tilemap_t mf_load_tilemap(const char* filepath)
 {
     mf_tilemap_t map = {0};
 
+    if (filepath == NULL)
+    {
+        return map;
+    }
     FILE* fp = fopen(filepath, "rb");
     if (fp == NULL)
     {
@@ -46,10 +50,13 @@ mf_tilemap_t mf_load_tilemap(const char* filepath)
 
 bool mf_save_tilemap(const char* filepath, const mf_tilemap_t* map)
 {
-    if (map == NULL)
+    if (filepath == NULL)
     {
+        LOG_WARNING("Opening file '%s' for saving failed", filepath);
         return false;
     }
+
+    assert(map);
 
     FILE* fp = fopen(filepath, "wb");
     if (fp == NULL)

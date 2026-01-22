@@ -1,8 +1,10 @@
 #include "nk_raylib.h"
 #include "editor_ui.h"
 #include "log.h"
+#include "dialog.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 static void editor_update_ui_input(editor_state_t* s)
 {
@@ -90,11 +92,15 @@ static void editor_ui_menu(editor_state_t* s)
         nk_layout_row_push(ctx, (rect.h * 1.6f));
         if (nk_button_label(ctx, "Open"))
         {
-            editor_open_map(s, "map.lem");
+            char* filepath = dialog_select_file();
+            editor_open_map(s, filepath);
+            free(filepath);
         }
         if (nk_button_label(ctx, "Save"))
         {
-            editor_save_map(s, "map.lem");
+            char* filepath = dialog_select_file();
+            editor_save_map(s, filepath);
+            free(filepath);
         }
 
         nk_layout_row_end(ctx);

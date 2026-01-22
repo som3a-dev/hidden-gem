@@ -297,6 +297,8 @@ void editor_load_tileset(editor_state_t* s, const char* filepath)
 
 void editor_open_map(editor_state_t* s, const char* filepath)
 {
+    LOG_INFO("Loading map from '%s'", filepath);
+
     mf_tilemap_t map = mf_load_tilemap(filepath);
 
     tilemap_resize(&(s->tilemap), map.w, map.h);
@@ -322,6 +324,8 @@ void editor_open_map(editor_state_t* s, const char* filepath)
 
 void editor_save_map(editor_state_t* s, const char* filepath)
 {
+    LOG_INFO("Saving map to '%s'", filepath);
+
     mf_tilemap_t map = mf_tilemap_create(s->tilemap.width, s->tilemap.height);
     for (int y = 0; y < s->tilemap.height; y++)
     {

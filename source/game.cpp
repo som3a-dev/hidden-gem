@@ -1,6 +1,8 @@
 #include "game.h"
 #include "gameplay_systems.h"
 
+#include "map_format.h"
+
 #include "vendor/json.hpp"
 
 #include <raymath.h>
@@ -38,7 +40,7 @@ void Game::init()
     load_tileset(ASSETS_PATH"tileset.json");
 
     tilemap.create(screen_width / tile_width, screen_height / tile_height);
-    load_tilemap(ASSETS_PATH"map.txt");
+    load_tilemap(ASSETS_PATH"map.lem");
 
     create_player(100, 100);
 
@@ -260,7 +262,26 @@ void Game::draw_tilemap_debug_overlay()
 
 void Game::load_tilemap(const std::string& filepath)
 {
-    std::ifstream stream(filepath);
+    mf_tilemap_t mf_map = mf_load_tilemap(filepath.c_str());
+
+    for (mf_mapsz_t y = 0; y < mf_map.h; y++)
+    {
+        for (mf_mapsz_t x = 0; x < mf_map.w; x++)
+        {
+            mf_tileid_t tile = mf_tilemap_get(&mf_map, x, y);
+            if (tile == MF_TILE_EMPTY)
+            {
+                tilemap.set_tile(x, y, EMPTY_TILE);
+            }
+            else
+            {
+                tilemap.set_tile(x, y, tile);
+            }
+        }
+    }
+
+    mf_tilemap_destroy(&mf_map);
+/*    std::ifstream stream(filepath);
     
     std::string line;
     int x = 0;
@@ -283,7 +304,7 @@ void Game::load_tilemap(const std::string& filepath)
         }
         y++;
         x = 0;
-    }
+    }*/
 }
 
 void Game::load_tileset(const std::string& filepath)
