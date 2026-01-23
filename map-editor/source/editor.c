@@ -65,7 +65,7 @@ static void editor_init(editor_state_t* s)
 
     const int left_panel_width = (int)(s->window_w * 0.1f);
     const int right_panel_width = (int)(left_panel_width * 1.3f);
-    const int top_panel_height = (int)(s->window_h * 0.07f);
+    const int top_panel_height = (int)(s->window_h * 0.05f);
 
     s->edit_area.right = (int)(s->window_w * 0.15f);
     s->edit_area.bottom = (int)(s->window_h * 0.2f);
@@ -94,10 +94,10 @@ static void editor_init(editor_state_t* s)
 
 	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 48, NULL, 0);
 	s->nk_title_font = nk_raylib_create_user_font(&(s->font), 24);
-    s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 36);
+    s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 16);
     s->nk_inner_font = nk_raylib_create_user_font(&(s->font), 20);
 
-    editor_load_tileset(s, ASSETS_PATH"tileset.json");
+//    editor_load_tileset(s, ASSETS_PATH"tileset.json");
 
     s->selected_tile_id = 1;
 
@@ -230,7 +230,11 @@ static void editor_draw_tilemap(editor_state_t* s)
 
 void editor_load_tileset(editor_state_t* s, const char* filepath)
 {
-    (s);
+    if (filepath == NULL)
+    {
+        return;
+    }
+
     FILE* fp = fopen(filepath, "r");
     if (fp == NULL)
     {
@@ -289,6 +293,8 @@ void editor_load_tileset(editor_state_t* s, const char* filepath)
         free(path);
     }
 
+    LOG_INFO("Loaded tileset file '%s' successfully", filepath);
+
     end:
     fclose(fp);
     free(buf);
@@ -300,6 +306,10 @@ void editor_open_map(editor_state_t* s, const char* filepath)
     LOG_INFO("Loading map from '%s'", filepath);
 
     mf_tilemap_t map = mf_load_tilemap(filepath);
+    if (map.tiles == NULL)
+    {
+        return;
+    }
 
     tilemap_resize(&(s->tilemap), map.w, map.h);
 
@@ -320,6 +330,22 @@ void editor_open_map(editor_state_t* s, const char* filepath)
     }
 
     mf_tilemap_destroy(&map);
+
+    const char* dir_path = GetDirectoryPath(filepath);
+    const char* tileset_file = "\\tileset.json";
+
+    size_t tileset_path_len = strlen(tileset_file) + strlen(dir_path) + 1;
+    char* tileset_path = malloc(sizeof(char) * tileset_path_len);
+
+    tileset_path[tileset_path_len-1] = '\0';
+    memcpy(tileset_path, dir_path, strlen(dir_path));
+    memcpy(tileset_path + strlen(dir_path), tileset_file, strlen(tileset_file));
+
+    LOG_INFO("Looking for tileset.json in path '%s'", tileset_path);
+
+    editor_load_tileset(s, tileset_path);
+
+    free(tileset_path);
 }
 
 void editor_save_map(editor_state_t* s, const char* filepath)

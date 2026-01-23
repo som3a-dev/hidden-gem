@@ -40,7 +40,7 @@ void Game::init()
     load_tileset(ASSETS_PATH"tileset.json");
 
     tilemap.create(screen_width / tile_width, screen_height / tile_height);
-    load_tilemap(ASSETS_PATH"map.lem");
+    load_tilemap(ASSETS_PATH"map.hgm");
 
     create_player(100, 100);
 

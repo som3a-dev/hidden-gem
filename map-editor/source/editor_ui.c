@@ -88,7 +88,7 @@ static void editor_ui_menu(editor_state_t* s)
     if (nk_begin(ctx, "Menu", rect, NK_WINDOW_BORDER))
     {
 //        nk_layout_row_static(ctx, rect.h * 0.7f, (int)(rect.h * 2.0f), 3);
-        nk_layout_row_begin(ctx, NK_STATIC, rect.h * 0.7f, 10);
+        nk_layout_row_begin(ctx, NK_STATIC, rect.h * 0.6f, 10);
         nk_layout_row_push(ctx, (rect.h * 1.6f));
         if (nk_button_label(ctx, "Open"))
         {

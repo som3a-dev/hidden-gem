@@ -1,14 +1,14 @@
 [
     {
         "id": 1,
-        "texture_id": "brackeys_platformer_assets/sprites/block.png"
+        "texture_id": "block.png"
     },
     {
         "id": 2,
-        "texture_id": "brackeys_platformer_assets/sprites/block.png"
+        "texture_id": "block.png"
     },
     {
         "id": 3,
-        "texture_id": "brackeys_platformer_assets/sprites/block.png"
+        "texture_id": "block.png"
     }
 ]

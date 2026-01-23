@@ -17,6 +17,7 @@ mf_tilemap_t mf_load_tilemap(const char* filepath)
     {
         return (mf_tilemap_t){0};
     }
+
     FILE* fp = fopen(filepath, "rb");
     if (fp == NULL)
     {
@@ -49,7 +50,7 @@ mf_tilemap_t mf_load_tilemap(const char* filepath)
     mf_tileid_t tile;
     mf_mapsz_t x = 0;
     mf_mapsz_t y = 0;
-    for (mf_mapsz_t i = 0; i < (map.w * map.h); i++)
+    while ((y < map.h))
     {
         if (feof(fp))
         {
@@ -104,7 +105,7 @@ bool mf_save_tilemap(const char* filepath, const mf_tilemap_t* map)
 
     const mf_tileid_t* row = map->tiles;
     const mf_tileid_t row_seperator = MF_TILE_ROW;
-    for (mf_mapsz_t i = 1; i < map->h; i++)
+    for (mf_mapsz_t i = 0; i < map->h; i++)
     {
         fwrite(row, sizeof(*row), map->w, fp);
         fwrite(&row_seperator, sizeof(row_seperator), 1, fp);
