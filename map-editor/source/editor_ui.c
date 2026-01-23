@@ -51,7 +51,26 @@ static void editor_ui_tileset(editor_state_t* s)
             {
                 continue;
             }
-            struct nk_image img = nk_raylib_texture_to_image(tex);
+
+            Rectangle src;
+            if (tile->sheet_w == 0)
+            {
+                // Not part of a spritesheet, draw the whole texture
+                src = (Rectangle){
+                0, 0,
+                (float)(tex->width), (float)(tex->height)};
+            }
+            else
+            {
+                int sprite_w = tex->width / tile->sheet_w;
+                int sprite_h = tex->height / tile->sheet_h;
+                src.x = (float)(tile->sheet_x * sprite_w);
+                src.y = (float)(tile->sheet_y * sprite_h);
+                src.width = (float)sprite_w;
+                src.height = (float)sprite_h;
+            }
+
+            struct nk_image img = nk_raylib_texture_to_image(tex, src);
 
             struct nk_rect r;
             struct nk_color c = {255, 255, 255, 255};

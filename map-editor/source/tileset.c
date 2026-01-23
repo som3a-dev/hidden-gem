@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 
-void tileset_add_tile(tileset_t* set, int id, const char* texture_path)
+void tileset_add_tile(tileset_t* set, int id, const char* texture_path, int sheet_x, int sheet_y, int sheet_w, int sheet_h)
 {
     assert(set);
 
@@ -15,6 +15,11 @@ void tileset_add_tile(tileset_t* set, int id, const char* texture_path)
     tile_t* tile = set->tiles + set->tiles_count;
     tile->id = id;
     strcpy(tile->texture_path, texture_path);
+
+    tile->sheet_x = sheet_x;
+    tile->sheet_y = sheet_y;
+    tile->sheet_w = sheet_w;
+    tile->sheet_h = sheet_h;
 
     set->tiles_count++;
 }

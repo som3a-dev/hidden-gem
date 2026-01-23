@@ -34,7 +34,7 @@ struct nk_color rl_to_nk_color(Color color)
     return clr;
 }
 
-struct nk_image nk_raylib_texture_to_image(Texture* tex)
+struct nk_image nk_raylib_texture_to_image(Texture* tex, Rectangle src)
 {
     struct nk_image img = {0};
     if (tex == NULL)
@@ -47,10 +47,10 @@ struct nk_image nk_raylib_texture_to_image(Texture* tex)
 	img.h = (nk_ushort)tex->height;
 
     // Set the region so we can sub-select the image later.
-    img.region[0] = (nk_ushort)0;
-    img.region[1] = (nk_ushort)0;
-    img.region[2] = img.w;
-    img.region[3] = img.h;
+    img.region[0] = (nk_ushort)(src.x);
+    img.region[1] = (nk_ushort)(src.y);
+    img.region[2] = (nk_ushort)(src.width);
+    img.region[3] = (nk_ushort)(src.height);
 
     return img;
 }
@@ -303,7 +303,14 @@ void nk_raylib_draw_commands(struct nk_context* ctx)
                 Texture* tex = (Texture*)(c->img.handle.ptr);
                 if (tex)
                 {
-                    Rectangle src = {0, 0, (float)(tex->width), (float)(tex->height)};
+//                    Rectangle src = {0, 0, (float)(tex->width), (float)(tex->height)};
+                    Rectangle src = {
+                        (float)(c->img.region[0]),
+                        (float)(c->img.region[1]),
+                        (float)(c->img.region[2]),
+                        (float)(c->img.region[3])
+                    };
+
                     Rectangle dst = {(float)(c->x), (float)(c->y), (float)(c->w), (float)(c->h)};
 
                     Color color;

@@ -130,7 +130,7 @@ void Game::draw()
     BeginDrawing();
     ClearBackground({0, 0, 0, 255});
 
-//    BeginShaderMode(shader);
+    BeginShaderMode(shader);
 
     light.set_uniforms(shader);
     if (normal_map)
@@ -143,7 +143,7 @@ void Game::draw()
 
     GameplaySystems::render_drawable_system(world, asset_m);
 
-//    EndShaderMode();
+    EndShaderMode();
 
     DrawCircleLines((int)(light.x), (int)(light.y), light.radius, WHITE);
 //    DrawRectangle((int)(light.x), (int)(light.y), 4, 4, WHITE);

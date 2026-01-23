@@ -213,9 +213,24 @@ static void editor_draw_tilemap(editor_state_t* s)
                     continue;
                 }
 
-                Rectangle src = {
+                Rectangle src;
+                if (tile->sheet_w == 0)
+                {
+                    // Not part of a spritesheet, draw the whole texture
+                    src = (Rectangle){
                     0, 0,
                     (float)(texture->width), (float)(texture->height)};
+                }
+                else
+                {
+                    int sprite_w = texture->width / tile->sheet_w;
+                    int sprite_h = texture->height / tile->sheet_h;
+                    src.x = (float)(tile->sheet_x * sprite_w);
+                    src.y = (float)(tile->sheet_y * sprite_h);
+                    src.width = (float)sprite_w;
+                    src.height = (float)sprite_h;
+                }
+
                 Vector2 origin = {0, 0};
                 DrawTexturePro(*texture, src, tile_rect, origin, 0, WHITE);
             }
@@ -245,7 +260,9 @@ void editor_load_tileset(editor_state_t* s, const char* filepath)
         strcpy(path, ASSETS_PATH);
         strcpy(path + strlen(ASSETS_PATH), mf_tile->texture_id);
         path[pathsz-1] = '\0';
-        tileset_add_tile(&(s->tileset), mf_tile->id, path);
+
+        asset_load_texture(path);
+        tileset_add_tile(&(s->tileset), mf_tile->id, path, mf_tile->sheet_x, mf_tile->sheet_y, mf_tile->sheet_w, mf_tile->sheet_h);
     }
 
     mf_load_tileset_free(&tiles, tile_count);
