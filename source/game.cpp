@@ -25,9 +25,7 @@ void Game::init()
     
     asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png");
     asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/block.png");
-    asset_m.load_texture(ASSETS_PATH"brick_normal_map.png");
     asset_m.load_texture(ASSETS_PATH"normal_map.png");
-    asset_m.load_texture(ASSETS_PATH"brickwall.jpg");
     asset_m.load_texture(ASSETS_PATH"torch.png");
 
     FrameAnimation anim;
@@ -39,7 +37,7 @@ void Game::init()
 
     load_tileset(ASSETS_PATH"tileset.json");
 
-    tilemap.create(screen_width / tile_width, screen_height / tile_height);
+    tilemap.create(screen_width / tile_width * 2, screen_height / tile_height * 2);
     load_tilemap(ASSETS_PATH"map.hgm");
 
     create_player(100, 100);
@@ -47,7 +45,7 @@ void Game::init()
     shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
     light.radius = 1200;
     light.color = {1.0f, 0.7f, 0.4f};
-    light.height = 100.0f;
+    light.height = 400.0f;
     light.ambient_attenuation = 0.03f;
 }
 
@@ -132,7 +130,7 @@ void Game::draw()
     BeginDrawing();
     ClearBackground({0, 0, 0, 255});
 
-    BeginShaderMode(shader);
+//    BeginShaderMode(shader);
 
     light.set_uniforms(shader);
     if (normal_map)
@@ -145,9 +143,9 @@ void Game::draw()
 
     GameplaySystems::render_drawable_system(world, asset_m);
 
-    EndShaderMode();
+//    EndShaderMode();
 
-//    DrawCircleLines((int)(light.x), (int)(light.y), light.radius, WHITE);
+    DrawCircleLines((int)(light.x), (int)(light.y), light.radius, WHITE);
 //    DrawRectangle((int)(light.x), (int)(light.y), 4, 4, WHITE);
 
     if (debug_draw)
@@ -202,12 +200,28 @@ void Game::draw_tilemap()
                 Texture2D* texture = asset_m.get_asset<Texture2D>(tile->texture_id);
                 if (texture)
                 {
-                    DrawTexturePro(*texture, {0, 0, (float)(texture->width), (float)(texture->height)},
-                    tile_rect, {0, 0}, 0, WHITE);
+                    if (tile->sheet_w == 0)
+                    {
+                        // Not a spritesheet, draw the entire texture
+                        DrawTexturePro(*texture, {0, 0, (float)(texture->width), (float)(texture->height)},
+                        tile_rect, {0, 0}, 0, WHITE);
+                    }
+                    else
+                    {
+                        int sprite_w = texture->width / tile->sheet_w;
+                        int sprite_h = texture->height / tile->sheet_h;
+                        Rectangle src;
+                        src.x = (float)(tile->sheet_x * sprite_w);
+                        src.y = (float)(tile->sheet_y * sprite_h);
+                        src.width = (float)sprite_w;
+                        src.height = (float)sprite_h;
+
+                        DrawTexturePro(*texture, src, tile_rect, {0, 0}, 0, WHITE);
+                    }
                 }
                 else
                 {
-                    DrawRectangle(x, y, tile_width, tile_height, BLACK);
+                    DrawRectangle(x, y, tile_width, tile_height, RED);
                 }
             }
         }
@@ -273,6 +287,10 @@ void Game::load_tilemap(const std::string& filepath)
             {
                 tilemap.set_tile(x, y, EMPTY_TILE);
             }
+            else if (tile == 3)
+            {
+                create_torch((float)(x * tile_width), (float)(y * tile_height));
+            }
             else
             {
                 tilemap.set_tile(x, y, tile);
@@ -281,69 +299,28 @@ void Game::load_tilemap(const std::string& filepath)
     }
 
     mf_tilemap_destroy(&mf_map);
-/*    std::ifstream stream(filepath);
-    
-    std::string line;
-    int x = 0;
-    int y = 0;
-    while (getline(stream, line))
-    {
-        std::cout << line << std::endl;
-        for (char tile : line)
-        {
-            if ((tile >= '0') && (tile <= '9'))
-            {
-                tilemap.set_tile(x, y, tile - '0');
-                if (tile == '3')
-                {
-                    create_torch((float)(x * tile_width), (float)(y * tile_height));
-                }
-            }
-
-            x++;
-        }
-        y++;
-        x = 0;
-    }*/
 }
 
 void Game::load_tileset(const std::string& filepath)
 {
-    using namespace nlohmann;
+    mf_tile_t* tiles;
+    int tiles_count;
+    mf_load_tileset(filepath.c_str(), &tiles, &tiles_count);
 
-    std::ifstream file(filepath);
-    if (file.is_open())
+    for (int i = 0; i < tiles_count; i++)
     {
-        json data = json::parse(file);
-        for (const auto& tile : data)
-        {
-            if (tile.contains("id") == false)
-            {
-                continue;
-            }
-            if (tile["id"].is_number_integer() == false)
-            {
-                continue;
-            }
+        mf_tile_t* mf_tile = tiles + i;
+        Tile tile;
+        tile.id = mf_tile->id;
+        tile.texture_id = std::string(ASSETS_PATH) + mf_tile->texture_id;
+        tile.sheet_x = mf_tile->sheet_x;
+        tile.sheet_y = mf_tile->sheet_y;
+        tile.sheet_w = mf_tile->sheet_w;
+        tile.sheet_h = mf_tile->sheet_h;
 
-            int id = tile["id"];
-
-            if (tile.contains("texture_id"))
-            {
-                if (tile["texture_id"].is_string())
-                {
-                    std::string texture_id = tile["texture_id"];
-                    texture_id.insert(0, ASSETS_PATH);
-
-                    asset_m.load_texture(texture_id);
-
-                    Tile tile_data;
-                    tile_data.id = id;
-                    tile_data.texture_id = texture_id;
-
-                    asset_m.load_tile(tile_data);
-                }
-            }
-        }
+        asset_m.load_texture(tile.texture_id);
+        asset_m.load_tile(tile);
     }
+
+    mf_load_tileset_free(&tiles, tiles_count);
 }

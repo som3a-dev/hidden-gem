@@ -1,7 +1,9 @@
 [
     {
         "id": 1,
-        "texture_id": "block.png"
+        "texture_id": "floor_tiles.png",
+        "sheet_position": [1, 1],
+        "sheet_size": [4, 4]
     },
     {
         "id": 2,

@@ -47,13 +47,6 @@
     Tilesets are defined as a json file that contains:
     - An array of objects:
         - Each object defines a tile's properties, like for example id and texture_id.
-        What the properties are is left up to the users of the library (Like the game and editor) to decide upon.
-    
-    - NOTE: Regarding the tileset json format, we only validate the format of the
-    specified json file (An array of objects, valid json) and return it as a string to the caller, we do not verify
-    any specific properties existence although this can be explored in the future.
-    - So parsing a tileset json file using this library means giving the file path, being informed of any errors in the format,
-    and if there are none you get the file as a normal null terminated string.
 */
 
 #ifndef _MAP_FORMAT_H
@@ -94,6 +87,24 @@ typedef struct
 } mf_tilemap_t;
 
 /*
+* Represents a tile object in the tileset json format.
+* For now the needed properties are hardcoded into this struct
+* Later we could make this dynamic and not care about properties
+*/
+typedef struct
+{
+    int id;
+    char* texture_id; 
+
+    // The position of the tile's sprite in the spritesheet, if texture_id points to a sprite sheet
+    int sheet_x;
+    int sheet_y;
+    // The size of the sheet in tiles
+    int sheet_w;
+    int sheet_h;
+} mf_tile_t;
+
+/*
 * Loads a tilemap from a map file
 * the map's tiles array is allocated on the heap, caller should free() after use or call mf_tilemap_destroy
 * Returns an empty mf_tilemap_t (zeroed out) if the file was invalid (invalid format/doesn't exist)
@@ -106,6 +117,17 @@ mf_tilemap_t mf_load_tilemap(const char* filepath);
 * returns true/false on success/failure
 */
 bool mf_save_tilemap(const char* filepath, const mf_tilemap_t* map);
+
+/*
+* Loads a tileset json file into an array of tiles
+* (*out_tiles) is heap allocated, caller must call mf_load_tileset_free()
+*/
+void mf_load_tileset(const char* filepath, mf_tile_t** out_tiles, int* out_count);
+
+/*
+* Frees the output from mf_load_tileset
+*/
+void mf_load_tileset_free(mf_tile_t** tiles, int tile_count);
 
 /*
 * Creates an empty tilemap (filled with MF_TILE_EMPTY) of the desired size

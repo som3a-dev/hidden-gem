@@ -1,4 +1,5 @@
 #include "include/map_format.h"
+#include "vendor/cJSON.h"
 #include "log.h"
 
 #include <assert.h>
@@ -114,6 +115,173 @@ bool mf_save_tilemap(const char* filepath, const mf_tilemap_t* map)
 
     fclose(fp);
     return true;
+}
+
+void mf_load_tileset(const char* filepath, mf_tile_t** out_tiles, int* out_count)
+{
+    if ((out_tiles == NULL) || out_count == NULL)
+    {
+        LOG_ERROR("Invalid parameters passed to mf_load_tileset");
+        return;
+    }
+
+    if (filepath == NULL)
+    {
+        goto fail_file;
+    }
+
+    FILE* fp = fopen(filepath, "r");
+    if (fp == NULL)
+    {
+        goto fail_file;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long bufsz = ftell(fp) + 1;
+    fseek(fp, 0, SEEK_SET);
+
+    char* buf = malloc(sizeof(char) * bufsz);
+    fread(buf, sizeof(char), bufsz, fp);
+    buf[bufsz-1] = '\0';
+
+    cJSON* json = cJSON_Parse(buf);
+
+    if (json == NULL)
+    {
+        goto invalid_format;
+    }
+
+    if (cJSON_IsArray(json) == false)
+    {
+        goto invalid_format;
+    }
+
+    int tile_count = cJSON_GetArraySize(json);
+    *out_tiles = calloc(tile_count, sizeof(mf_tile_t));
+    *out_count = tile_count;
+
+    mf_tile_t* tile = (*out_tiles);
+
+    for (int i = 0; i < tile_count; i++)
+    {
+        cJSON* item = cJSON_GetArrayItem(json, i);
+        if (cJSON_IsObject(item) == false)
+        {
+            goto invalid_format;
+        }
+
+        // Mandatory properties first (id, texture_id)
+        cJSON* id_item = cJSON_GetObjectItem(item, "id");
+        if (cJSON_IsNumber(id_item) == false)
+        {
+            goto invalid_format;
+        }
+        cJSON* texture_id_item = cJSON_GetObjectItem(item, "texture_id");
+        if (cJSON_IsString(texture_id_item) == false)
+        {
+            goto invalid_format;
+        }
+
+        // TODO(): find a way to check if id is not an integer
+        int id = (int)(cJSON_GetNumberValue(id_item));
+        char* texture_id = cJSON_GetStringValue(texture_id_item);
+
+        tile->id = id;
+        tile->texture_id = malloc(sizeof(char) * (strlen(texture_id)+1));
+        strcpy(tile->texture_id, texture_id);
+
+        // Non mandatory properties
+        cJSON* sheet_pos_item = cJSON_GetObjectItem(item, "sheet_position");
+        if (sheet_pos_item)
+        {
+            if (cJSON_IsArray(sheet_pos_item) == false)
+            {
+                goto invalid_format;
+            }
+            if (cJSON_GetArraySize(sheet_pos_item) != 2)
+            {
+                goto invalid_format;
+            }
+
+            cJSON* sheet_x_item = cJSON_GetArrayItem(sheet_pos_item, 0);
+            cJSON* sheet_y_item = cJSON_GetArrayItem(sheet_pos_item, 1);
+
+            if ((cJSON_IsNumber(sheet_x_item) == false) || (cJSON_IsNumber(sheet_y_item) == false))
+            {
+                goto invalid_format;
+            }
+
+            tile->sheet_x = (int)(cJSON_GetNumberValue(sheet_x_item));
+            tile->sheet_y = (int)(cJSON_GetNumberValue(sheet_y_item));
+       
+            // A sheet size must be specified alongside a sheet position
+            cJSON* sheet_size_item = cJSON_GetObjectItem(item, "sheet_size");
+            if (cJSON_IsArray(sheet_size_item) == false)
+            {
+                goto invalid_format;
+            }
+            if (cJSON_GetArraySize(sheet_size_item) != 2)
+            {
+                goto invalid_format;
+            }
+
+            cJSON* sheet_w_item = cJSON_GetArrayItem(sheet_size_item, 0);
+            cJSON* sheet_h_item = cJSON_GetArrayItem(sheet_size_item, 1);
+
+            if ((cJSON_IsNumber(sheet_w_item) == false) || (cJSON_IsNumber(sheet_h_item) == false))
+            {
+                goto invalid_format;
+            }
+
+            tile->sheet_w = (int)(cJSON_GetNumberValue(sheet_w_item));
+            tile->sheet_h = (int)(cJSON_GetNumberValue(sheet_h_item));
+        }
+
+        tile++;
+    }
+
+    // success
+    LOG_INFO("Loaded tileset file '%s' successfully", filepath);
+    goto free;
+
+    invalid_format:
+    LOG_WARNING("Invalid tileset json format");
+    mf_load_tileset_free(out_tiles, *(out_count));
+    goto free;
+
+    fail_file:
+    LOG_ERROR("Invalid tileset json file passed");
+    *out_tiles = NULL;
+    *out_count = 0;
+    return;
+
+    free:
+    free(buf);
+    fclose(fp);
+    cJSON_Delete(json);
+}
+
+void mf_load_tileset_free(mf_tile_t** tiles, int tile_count)
+{
+    if (tiles == NULL)
+    {
+        LOG_ERROR("Invalid paramaters passed to mf_load_tileset_free");
+        return;
+    }
+
+    if (((*tiles) == NULL) || (tile_count <= 0))
+    {
+        return;
+    }
+
+    for (int i = 0; i < tile_count; i++)
+    {
+        mf_tile_t* tile = (*tiles) + i;
+        free(tile->texture_id);
+    }
+
+    free(*tiles);
+    *tiles = NULL;
 }
 
 mf_tilemap_t mf_tilemap_create(mf_mapsz_t w, mf_mapsz_t h)

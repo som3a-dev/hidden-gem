@@ -94,7 +94,7 @@ static void editor_init(editor_state_t* s)
 
 	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 48, NULL, 0);
 	s->nk_title_font = nk_raylib_create_user_font(&(s->font), 24);
-    s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 16);
+    s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 20);
     s->nk_inner_font = nk_raylib_create_user_font(&(s->font), 20);
 
 //    editor_load_tileset(s, ASSETS_PATH"tileset.json");
@@ -230,75 +230,25 @@ static void editor_draw_tilemap(editor_state_t* s)
 
 void editor_load_tileset(editor_state_t* s, const char* filepath)
 {
-    if (filepath == NULL)
+    mf_tile_t* tiles;
+    int tile_count;
+    mf_load_tileset(filepath, &tiles, &tile_count);
+
+    for (int i = 0; i < tile_count; i++)
     {
-        return;
-    }
+        mf_tile_t* mf_tile = tiles + i;
 
-    FILE* fp = fopen(filepath, "r");
-    if (fp == NULL)
-    {
-        return;
-    }
+        size_t pathsz = sizeof(char) * (strlen(ASSETS_PATH) + strlen(mf_tile->texture_id) + 1);
+        assert(pathsz < ASSET_MAX_PATH);
 
-    fseek(fp, 0, SEEK_END);
-    long bufsz = ftell(fp) + 1;
-    fseek(fp, 0, SEEK_SET);
-
-    char* buf = malloc(sizeof(char) * bufsz);
-    fread(buf, sizeof(char), bufsz, fp);
-    buf[bufsz-1] = '\0';
-
-    cJSON* json = cJSON_Parse(buf);
-    if (json == NULL)
-    {
-        LOG_WARNING("Invalid tileset json format");
-        return;
-    }
-
-    if (cJSON_IsArray(json) == false)
-    {
-        LOG_WARNING("Invalid tileset json format");
-        goto end;
-    }
-
-    for (int i = 0; i < cJSON_GetArraySize(json); i++)
-    {
-        cJSON* item = cJSON_GetArrayItem(json, i);
-        if (cJSON_IsObject(item) == false)
-        {
-            LOG_WARNING("Invalid tileset json format");
-            goto end;
-        }
-
-        cJSON* texture_id_item = cJSON_GetObjectItem(item, "texture_id");
-        if (cJSON_IsString(texture_id_item) == false)
-        {
-            LOG_WARNING("Invalid tileset json format");
-            goto end;
-        }
-
-        // TODO(): find a way to check if id is not an integer
-        int id = i + 1;
-        char* texture_id = cJSON_GetStringValue(texture_id_item);
-
-        size_t pathsz = sizeof(char) * (strlen(ASSETS_PATH) + strlen(texture_id) + 1);
-        char* path = malloc(pathsz);
+        char path[ASSET_MAX_PATH];
         strcpy(path, ASSETS_PATH);
-        strcpy(path + strlen(ASSETS_PATH), texture_id);
+        strcpy(path + strlen(ASSETS_PATH), mf_tile->texture_id);
         path[pathsz-1] = '\0';
-
-        tileset_add_tile(&(s->tileset), id, path);
-
-        free(path);
+        tileset_add_tile(&(s->tileset), mf_tile->id, path);
     }
 
-    LOG_INFO("Loaded tileset file '%s' successfully", filepath);
-
-    end:
-    fclose(fp);
-    free(buf);
-    cJSON_Delete(json);
+    mf_load_tileset_free(&tiles, tile_count);
 }
 
 void editor_open_map(editor_state_t* s, const char* filepath)

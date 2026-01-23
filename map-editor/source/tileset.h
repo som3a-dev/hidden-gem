@@ -9,7 +9,7 @@
 typedef struct
 {
     int id;
-    char texture_path[ASSET_MAX_PATH];
+    char texture_path[ASSET_MAX_PATH]; // the texture_id in the tileset json, prefixed by ASSETS_PATH
 } tile_t;
 
 typedef struct

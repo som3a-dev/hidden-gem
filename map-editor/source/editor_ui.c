@@ -89,14 +89,15 @@ static void editor_ui_menu(editor_state_t* s)
     {
 //        nk_layout_row_static(ctx, rect.h * 0.7f, (int)(rect.h * 2.0f), 3);
         nk_layout_row_begin(ctx, NK_STATIC, rect.h * 0.6f, 10);
-        nk_layout_row_push(ctx, (rect.h * 1.6f));
-        if (nk_button_label(ctx, "Open"))
+//        nk_layout_row_static(ctx, 0, 128, 2);
+        nk_layout_row_push(ctx, (rect.h * 2.0f));
+        if (nk_button_label(ctx, "Open Map"))
         {
             char* filepath = dialog_select_file(DIALOG_SELECT_FILE_OPEN);
             editor_open_map(s, filepath);
             free(filepath);
         }
-        if (nk_button_label(ctx, "Save"))
+        if (nk_button_label(ctx, "Save Map"))
         {
             char* filepath = dialog_select_file(DIALOG_SELECT_FILE_SAVE);
             editor_save_map(s, filepath);
@@ -121,7 +122,7 @@ static void editor_ui_right_panel(editor_state_t* s)
     }
 
     nk_style_push_font(ctx, &(s->nk_title_font));
-    if (nk_begin(ctx, "Options", rect, 0))
+    if (nk_begin(ctx, "Options", rect, NK_WINDOW_TITLE | NK_WINDOW_BORDER))
     {
         nk_style_push_font(ctx, &(s->nk_inner_font));
 
