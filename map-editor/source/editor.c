@@ -57,9 +57,6 @@ static void editor_init(editor_state_t* s)
 	InitWindow(s->window_w, s->window_h, "level-editor");
     SetTargetFPS(60);
 
-    asset_load_texture(ASSETS_PATH"block.png");
-    asset_load_texture(ASSETS_PATH"dirt0.png");
-
     s->tile_w = 32;
     s->tile_h = 32;
 
@@ -243,28 +240,56 @@ static void editor_draw_tilemap(editor_state_t* s)
     }
 }
 
+static char* get_dir_path(const char* filepath)
+{
+    int last_slash_index = -1;
+
+    for (int i = 0; i < strlen(filepath); i++)
+    {
+        if ((filepath[i] == '\\') || (filepath[i] == '/'))
+        {
+            last_slash_index = i;
+        }
+    }
+    
+    assert(last_slash_index != -1);
+
+    last_slash_index++; //include the last slash
+
+    char* dirpath = malloc(sizeof(char) * (last_slash_index + 1));
+    memcpy(dirpath, filepath, sizeof(char) * last_slash_index);
+    dirpath[last_slash_index] = '\0';
+
+    return dirpath;
+}
+
 void editor_load_tileset(editor_state_t* s, const char* filepath)
 {
+    (s);
     mf_tile_t* tiles;
     int tile_count;
     mf_load_tileset(filepath, &tiles, &tile_count);
 
+    char* filedir = get_dir_path(filepath); // the directory the tileset json file is in, is used as the asset directory
+
     for (int i = 0; i < tile_count; i++)
     {
         mf_tile_t* mf_tile = tiles + i;
+        (mf_tile);
 
-        size_t pathsz = sizeof(char) * (strlen(ASSETS_PATH) + strlen(mf_tile->texture_id) + 1);
+        size_t pathsz = sizeof(char) * (strlen(filedir) + strlen(mf_tile->texture_id) + 1);
         assert(pathsz < ASSET_MAX_PATH);
 
         char path[ASSET_MAX_PATH];
-        strcpy(path, ASSETS_PATH);
-        strcpy(path + strlen(ASSETS_PATH), mf_tile->texture_id);
+        strcpy(path, filedir);
+        strcpy(path + strlen(filedir), mf_tile->texture_id);
         path[pathsz-1] = '\0';
 
         asset_load_texture(path);
         tileset_add_tile(&(s->tileset), mf_tile->id, path, mf_tile->sheet_x, mf_tile->sheet_y, mf_tile->sheet_w, mf_tile->sheet_h);
     }
 
+    free(filedir);
     mf_load_tileset_free(&tiles, tile_count);
 }
 
