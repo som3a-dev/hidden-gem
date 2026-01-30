@@ -13,8 +13,8 @@
 
 void Game::init()
 {
-    screen_width = 1280;
-    screen_height = 720;
+    screen_width = 1800;
+    screen_height = 900;
     tile_width = 64;
     tile_height = 64;
 
@@ -41,12 +41,15 @@ void Game::init()
     load_tilemap(ASSETS_PATH"map.hgm");
 
     create_player(100, 100);
+    create_torch(800, 700);
+
+//    ToggleFullscreen();
 
     shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
-    light.radius = 1200;
+    light.radius = 700;
     light.color = {1.0f, 0.7f, 0.4f};
-    light.height = 400.0f;
-    light.ambient_attenuation = 0.03f;
+    light.height = 130.0f;
+    light.ambient_attenuation = 0.1f;
 }
 
 void Game::destroy()
@@ -80,7 +83,6 @@ void Game::update()
 
     dt = GetFrameTime() * 1000;
 
-//    light.x += 0.1f * dt;
     if (light.x > screen_width)
     {
         light.x = -100;
@@ -128,7 +130,7 @@ void Game::draw()
     Texture2D* normal_map = asset_m.get_asset<Texture2D>(current_normal_map);
 
     BeginDrawing();
-    ClearBackground({0, 0, 0, 255});
+    ClearBackground({20, 20, 20, 255});
 
     BeginShaderMode(shader);
 
@@ -145,8 +147,8 @@ void Game::draw()
 
     EndShaderMode();
 
-    DrawCircleLines((int)(light.x), (int)(light.y), light.radius, WHITE);
-//    DrawRectangle((int)(light.x), (int)(light.y), 4, 4, WHITE);
+//    DrawCircleLines((int)(light.x), (int)(light.y), light.radius, WHITE);
+    DrawRectangle((int)(light.x), (int)(light.y), 4, 4, WHITE);
 
     if (debug_draw)
     {
@@ -168,6 +170,13 @@ void Game::draw()
 
     snprintf(buf, sizeof(buf), "Light Height: %f", light.height);
     DrawText(buf, 0, y, 24, RED);
+
+    //UI
+    const int box_w = 400;
+    const int box_h = 200;
+    const int box_border = 4;
+    DrawRectangle(0, screen_height - box_h, box_w, box_h, BLACK);
+    DrawRectangleLinesEx({0, (float)(screen_height - box_h), (float)box_w, (float)box_h}, 4, WHITE);
 
     EndDrawing();
 }
@@ -195,7 +204,8 @@ void Game::draw_tilemap()
             };
 
             Tile* tile = asset_m.get_asset<Tile>(std::to_string(id));
-            if (tile)
+            assert(tile);
+
             {
                 Texture2D* texture = asset_m.get_asset<Texture2D>(tile->texture_id);
                 if (texture)
@@ -259,6 +269,14 @@ void Game::draw_tilemap_debug_overlay()
                 continue;
             }
 
+            Tile* tile = asset_m.get_asset<Tile>(std::to_string(id));
+            assert(tile);
+
+            if (tile->collidable == false)
+            {
+                continue;
+            }
+
             int x = tile_x * tile_width;
             int y = tile_y * tile_height;
 
@@ -317,6 +335,8 @@ void Game::load_tileset(const std::string& filepath)
         tile.sheet_y = mf_tile->sheet_y;
         tile.sheet_w = mf_tile->sheet_w;
         tile.sheet_h = mf_tile->sheet_h;
+        tile.collidable = mf_tile->collidable;
+        printf("%d\n", tile.collidable);
 
         asset_m.load_texture(tile.texture_id);
         asset_m.load_tile(tile);

@@ -102,6 +102,8 @@ typedef struct
     // The size of the sheet in tiles
     int sheet_w;
     int sheet_h;
+
+    bool collidable;
 } mf_tile_t;
 
 /*

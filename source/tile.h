@@ -11,6 +11,7 @@
 #define _TILE_H
 
 #include <string>
+#include <stdbool.h>
 #include "map_format.h"
 
 struct Tile
@@ -24,6 +25,8 @@ struct Tile
     // The size of the sheet in tiles
     int sheet_w;
     int sheet_h;
+
+    bool collidable;
 };
 
 #endif

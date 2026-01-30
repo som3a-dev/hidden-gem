@@ -237,6 +237,21 @@ void mf_load_tileset(const char* filepath, mf_tile_t** out_tiles, int* out_count
             tile->sheet_h = (int)(cJSON_GetNumberValue(sheet_h_item));
         }
 
+        cJSON* collidable_item = cJSON_GetObjectItem(item, "collidable");
+        if (collidable_item)
+        {
+            if (cJSON_IsBool(collidable_item) == false)
+            {
+                goto invalid_format;
+            }
+
+            tile->collidable = cJSON_IsTrue(collidable_item);
+        }
+        else
+        {
+            tile->collidable = true; // tiles are collidable by default
+        }
+
         tile++;
     }
 

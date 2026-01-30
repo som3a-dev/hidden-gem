@@ -1,6 +1,7 @@
 #include "collision.h"
 
 #include <array>
+#include <assert.h>
 
 namespace Collision
 {
@@ -20,7 +21,16 @@ namespace Collision
         {
             for (int tile_x = 0; tile_x < tilemap.get_width(); tile_x++)
             {
-                if (tilemap.get_tile(tile_x, tile_y) == EMPTY_TILE)
+                int tile_id = tilemap.get_tile(tile_x, tile_y);
+                if (tile_id == EMPTY_TILE)
+                {
+                    continue;
+                }
+
+                Tile* tile = game.asset_m.get_asset<Tile>(std::to_string(tile_id));
+                assert(tile);
+
+                if (tile->collidable == false)
                 {
                     continue;
                 }

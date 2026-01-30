@@ -3,14 +3,19 @@
         "id": 1,
         "texture_id": "floor_tiles.png",
         "sheet_position": [1, 1],
-        "sheet_size": [4, 4]
+        "sheet_size": [4, 4],
+        "collidable": false
     },
     {
         "id": 2,
-        "texture_id": "block.png"
+        "texture_id": "floor_tiles.png",
+        "sheet_position": [1, 0],
+        "sheet_size": [4, 4]
     },
     {
         "id": 3,
-        "texture_id": "block.png"
+        "texture_id": "torch.png",
+        "sheet_position": [0, 0],
+        "sheet_size": [4, 2]
     }
 ]
