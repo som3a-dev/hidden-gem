@@ -179,8 +179,8 @@ namespace GameplaySystems
             if ((drawable.w == 0) || (drawable.h == 0))
             {
                 // Use texture's size
-                dst_rect.width = src_rect.width;
-                dst_rect.height = src_rect.height;
+                dst_rect.width = src_rect.width * drawable.scale;
+                dst_rect.height = src_rect.height * drawable.scale;
             }
 
             DrawTexturePro(*texture, src_rect, dst_rect, {0, 0}, 0, WHITE);
