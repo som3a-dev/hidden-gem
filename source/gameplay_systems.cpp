@@ -176,6 +176,13 @@ namespace GameplaySystems
                 static_cast<float>(drawable.h) * drawable.scale
             };
 
+            if ((drawable.w == 0) || (drawable.h == 0))
+            {
+                // Use texture's size
+                dst_rect.width = src_rect.width;
+                dst_rect.height = src_rect.height;
+            }
+
             DrawTexturePro(*texture, src_rect, dst_rect, {0, 0}, 0, WHITE);
         }
     }
