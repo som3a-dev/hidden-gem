@@ -50,6 +50,16 @@ void Game::init()
     light.color = {1.0f, 0.7f, 0.4f};
     light.height = 130.0f;
     light.ambient_attenuation = 0.1f;
+
+    const int box_w = screen_width;
+    const int box_h = 100;
+    box.box = {
+        0, (float)(screen_height - box_h - 12),
+        (float)box_w, (float)box_h
+    };
+    box.text = "The stone corridor stretches farther than your light should allow, its walls damp and scarred by something that once tried to escape. Every step you take feels louder than the last, and for a brief moment, you are certain the darkness ahead breathes in response to you.";
+    box.percent_visible = 0;
+    box.show_text = true;
 }
 
 void Game::destroy()
@@ -123,6 +133,8 @@ void Game::update()
     animated_drawable_system(world, asset_m);
 
     current_normal_map = ASSETS_PATH"normal_map.png";
+
+    box.update();
 }
 
 void Game::draw()
@@ -171,12 +183,7 @@ void Game::draw()
     snprintf(buf, sizeof(buf), "Light Height: %f", light.height);
     DrawText(buf, 0, y, 24, RED);
 
-    //UI
-    const int box_w = 400;
-    const int box_h = 200;
-    const int box_border = 4;
-    DrawRectangle(0, screen_height - box_h, box_w, box_h, BLACK);
-    DrawRectangleLinesEx({0, (float)(screen_height - box_h), (float)box_w, (float)box_h}, 4, WHITE);
+    box.draw();
 
     EndDrawing();
 }

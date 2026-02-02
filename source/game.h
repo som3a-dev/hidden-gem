@@ -7,6 +7,7 @@
 #include "ecs/world.h"
 #include "tilemap.h"
 #include "light_source.h"
+#include "textbox.h"
 
 #include <vector>
 
@@ -39,12 +40,17 @@ struct Game
     float ambient_attenuation;
     std::string current_normal_map;
 
+    Textbox box;
+
     void init();
     void destroy();
 
     void loop();
+
+private:
     void update();
     void draw();
+
     void draw_tilemap();
 
     void draw_player_debug_overlay();
