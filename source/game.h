@@ -8,17 +8,26 @@
 #include "tilemap.h"
 #include "light_source.h"
 #include "textbox.h"
+#include "popup_image.h"
+#include "game_draw_buffer.h"
 
 #include <vector>
 
+
 struct Game
 {
-    Shader shader;
     bool running;
     int screen_width;
     int screen_height;
 
+    Shader shader;
+    GameDrawBuffer draw_buf;
+    Font font;
+
     bool debug_draw;
+    bool show_paper;
+
+    float mission_paper_scale;
 
     AssetManager asset_m;
 
@@ -41,6 +50,7 @@ struct Game
     std::string current_normal_map;
 
     Textbox box;
+    PopupImage mission_popup;
 
     void init();
     void destroy();
@@ -56,9 +66,9 @@ private:
     void draw_player_debug_overlay();
     void draw_tilemap_debug_overlay();
 
-    void create_tile(float x, float y);
     void create_player(float x, float y);
     void create_torch(float x, float y);
+    void create_table(float x, float y);
 
     void load_tilemap(const std::string& filepath);
     void load_tileset(const std::string& filepath);

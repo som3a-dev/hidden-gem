@@ -33,27 +33,27 @@ void Game::create_player(float x, float y)
     }
 
     ECS::DrawableComponent drawable;
-    drawable.scale = 5;
+    drawable.scale = 2.5f;
 
     ECS::TransformComponent transform = {x, y};
 
     ECS::MovementComponent movement;
-    movement.speed = 0.3f;
-    movement.gravity = gravity * 2;
+    movement.speed = 150.0f;
+    movement.gravity = gravity;
 
     ECS::CollisionComponent collision;
-    collision.rect.x = 50;
-    collision.rect.y = 60;
-    collision.rect.width = 60; // default/fallback size
-    collision.rect.height = 80;
+    collision.rect.x = 32 * (2.5f / 3);
+    collision.rect.y = 48 * (2.5f / 3);
+    collision.rect.width = 32 * (2.5f / 3); 
+    collision.rect.height = 36 * (2.5f / 3);
 
     ECS::AnimatedDrawableComponent animated_drawable;
     animated_drawable.animation_id = "knight_idle";
 
     ECS::PlayerComponent player_component;
-    player_component.accel = 0.03f;
-    player_component.friction = 0.03f;
-    player_component.jump_force = 0.5f;
+    player_component.accel = movement.speed * 4;
+    player_component.friction = movement.speed * 4;
+    player_component.jump_force = 300.0f;
 
     player = world.create_entity();
     world.transforms.add_component(player, std::move(transform));
@@ -73,8 +73,7 @@ void Game::create_torch(float x, float y)
 {
     ECS::TransformComponent transform = {x, y};
     ECS::DrawableComponent drawable;
-    drawable.scale = 3;
-    transform.y -= 56 * drawable.scale;
+    drawable.scale = 1;
 
     ECS::AnimatedDrawableComponent animated_drawable;
     animated_drawable.animation_id = "torch_idle";
@@ -84,6 +83,21 @@ void Game::create_torch(float x, float y)
     world.drawables.add_component(entity, std::move(drawable));
     world.animated_drawables.add_component(entity, std::move(animated_drawable));
 
-    light.x = transform.x + 64;
-    light.y = transform.y + 32;
+    light.x = transform.x + 24;
+    light.y = transform.y + 12;
+}
+
+void Game::create_table(float x, float y)
+{
+    ECS::TransformComponent transform = {x, y};
+    ECS::DrawableComponent drawable;
+    drawable.scale = 0.2f;
+    drawable.texture_path = ASSETS_PATH"table2.png";
+
+    ECS::InteractableComponent interactable;
+
+    int entity = world.create_entity();
+    world.transforms.add_component(entity, std::move(transform));
+    world.drawables.add_component(entity, std::move(drawable));
+    world.interactables.add_component(entity, std::move(interactable));
 }

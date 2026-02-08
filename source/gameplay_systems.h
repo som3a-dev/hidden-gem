@@ -17,11 +17,15 @@ namespace GameplaySystems
 
     void collision_update_system(ECS::World& world, const Game& game, const Tilemap& tilemap);
 
+    void interactable_update_system(ECS::World& world, Game& game);
+
     void animated_drawable_system(ECS::World& world, const AssetManager& asset_m);
 
     void render_drawable_system(ECS::World& world, const AssetManager& asset_m);
 
-    void player_system(ECS::World& world);
+    void draw_ui_system(ECS::World& world, Game& game);
+
+    void player_system(ECS::World& world, float dt);
 };
 
 #endif

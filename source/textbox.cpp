@@ -1,7 +1,20 @@
 #include "textbox.h"
 
+void Textbox::set_box(Rectangle new_box)
+{
+    box = new_box;
+    og_box = new_box;
+}
+
 void Textbox::update()
 {
+    if (!visible)
+    {
+        percent_visible = 0;
+        box = og_box;
+        return;
+    }
+
     if (percent_visible == 1)
     {
         if (IsKeyPressed(KEY_ENTER))
@@ -10,7 +23,7 @@ void Textbox::update()
         }
     }
 
-    if (IsKeyPressed(KEY_K))
+    if (IsKeyPressed(KEY_M))
     {
         percent_visible = 1;
     }
@@ -35,9 +48,15 @@ void Textbox::update()
 
 void Textbox::draw()
 {
-    const int border = 4;
+    if (!visible)
+    {
+        return;
+    }
 
-    DrawRectanglePro(box, {0, 0}, 0, BLACK);
+    const int border = 1;
+    const int fontsz = 12;
+
+    DrawRectanglePro(box, {0, 0}, 0, {20, 20, 20, 255});
     DrawRectangleLinesEx(box, border, WHITE);
 
     float text_x = box.x + border * 2;
@@ -53,17 +72,11 @@ void Textbox::draw()
     int words_count;
     char** words = TextSplit(text.c_str(), ' ', &words_count);
 
-    int space_width;
-    {
-        char space[] = {' ', '\0'};
-        space_width = MeasureText(space, 24);
-    }
-
     size_t chars_drawn = 0;
     for (int i = 0; i < words_count; i++)
     {
         const char* word = words[i];
-        Vector2 word_sz = MeasureTextEx(font, word, 24, spacing);
+        Vector2 word_sz = MeasureTextEx(font, word, fontsz, spacing);
 
         if ((char_x + word_sz.x) >= (box.x + box.width))
         {
@@ -73,7 +86,10 @@ void Textbox::draw()
 
         if ((char_y + word_sz.y) >= (box.y + box.height))
         {
-            box.height += ((char_y + word_sz.y) - (box.y + box.height)) + word_sz.y;
+            float new_h = ((char_y + word_sz.y) - (box.y + box.height)) + word_sz.y;
+            box.height += new_h;
+            char_y -= new_h;
+            box.y -= new_h;
         }
 
         for (int j = 0; j < strlen(word); j++)
@@ -83,10 +99,10 @@ void Textbox::draw()
                 goto done_drawing;
             }
 
-            DrawTextCodepoint(font, word[j], {char_x, char_y}, 24, GRAY);
+            DrawTextCodepoint(font, word[j], {char_x, char_y}, fontsz, WHITE);
 
             char chars[] = {word[j], '\0'};
-            Vector2 size = MeasureTextEx(font, chars, 24, 0);
+            Vector2 size = MeasureTextEx(font, chars, fontsz, 0);
             char_x += size.x + spacing;
 
             if ((char_x + size.x) >= (box.x + box.width))
@@ -99,7 +115,7 @@ void Textbox::draw()
         }
 
         char chars[] = {' ', '\0'};
-        Vector2 size = MeasureTextEx(font, chars, 24, 0);
+        Vector2 size = MeasureTextEx(font, chars, fontsz, 0);
         char_x += size.x;
     }
 

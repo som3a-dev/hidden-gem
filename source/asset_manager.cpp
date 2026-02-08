@@ -35,6 +35,8 @@ void AssetManager::load_texture(const std::string& path)
         return;
     }
 
+    SetTextureFilter(texture, TEXTURE_FILTER_POINT);
+
     TableEntry<Texture2D> entry;
     entry.used = true;
     entry.path = path;

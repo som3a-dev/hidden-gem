@@ -5,9 +5,10 @@
 
 #include <string>
 
+// TOOD(omar): add dt to textbox
 struct Textbox
 {
-    Rectangle box;
+    bool visible = false;
     std::string text;
 
     float percent_visible = 1; // percentage of text that is visible, from 0 to 1
@@ -17,8 +18,14 @@ struct Textbox
 
     bool show_text = false; // if true, gradually show more of the text
 
+    void set_box(Rectangle new_box);
+
     void update();
     void draw();
+
+private:
+    Rectangle box = {0};
+    Rectangle og_box = {0};
 };
 
 #endif

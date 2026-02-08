@@ -9,6 +9,8 @@
 #include "sparse_set.h"
 #include "../frame_animation.h"
 
+#define ENTITY_INVALID -1
+
 namespace ECS
 {
     struct TransformComponent
@@ -75,6 +77,14 @@ namespace ECS
         float jump_force = 0;
     };
 
+    struct InteractableComponent
+    {
+        bool active = false; // if true, a player is currently able to interact with us
+        float popup_scale = 0; // scale of the popup appearing on top of us, for animating it
+
+        int close_player_id = ENTITY_INVALID; // entity id of the player entity that can interact with us now
+    };
+
     struct World
     {
         std::vector<int> entities;
@@ -90,6 +100,8 @@ namespace ECS
         SparseSet<AnimatedDrawableComponent> animated_drawables;
 
         SparseSet<PlayerComponent> players;
+
+        SparseSet<InteractableComponent> interactables;
 
         int next_entity_id = 0;
 

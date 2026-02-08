@@ -17,5 +17,13 @@
         "texture_id": "torch.png",
         "sheet_position": [0, 0],
         "sheet_size": [4, 2]
+    },
+    {
+        "id": 4,
+        "texture_id": "table_with_paper.png"
+    },
+    {
+        "id": 5,
+        "texture_id": "table2.png"
     }
 ]

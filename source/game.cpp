@@ -13,20 +13,33 @@
 
 void Game::init()
 {
-    screen_width = 1800;
-    screen_height = 900;
-    tile_width = 64;
-    tile_height = 64;
+    screen_width = 640 * 2;
+    screen_height = 360 * 2;
+    tile_width = 24;
+    tile_height = 24;
 
-    gravity = 0.01f;
-    
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screen_width, screen_height, "Hidden GEM");
+
+//    ToggleFullscreen();
+
+    screen_width = GetScreenWidth();
+    screen_height = GetScreenHeight();
+
+    draw_buf.w = 640;
+    draw_buf.h = 360;
+    draw_buf.tex = LoadRenderTexture(draw_buf.w, draw_buf.h);
+
+    gravity = 1000.0f;
+
     SetTargetFPS(60);
     
     asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png");
     asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/block.png");
     asset_m.load_texture(ASSETS_PATH"normal_map.png");
     asset_m.load_texture(ASSETS_PATH"torch.png");
+    asset_m.load_texture(ASSETS_PATH"emote22-smol.png");
+    asset_m.load_texture(ASSETS_PATH"papyrus.jpg");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);
@@ -40,30 +53,46 @@ void Game::init()
     tilemap.create(screen_width / tile_width * 2, screen_height / tile_height * 2);
     load_tilemap(ASSETS_PATH"map.hgm");
 
-    create_player(100, 100);
-    create_torch(800, 700);
+    create_torch(320, 283);
+    create_table(450, 303);
+    create_player(300, 220);
 
 //    ToggleFullscreen();
 
     shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
     light.radius = 700;
-    light.color = {1.0f, 0.7f, 0.4f};
-    light.height = 130.0f;
-    light.ambient_attenuation = 0.1f;
+    light.color = {1.0f, 0.9f, 0.6f};
+    light.height = 70.0f;
+    light.ambient_attenuation = 0.02f;
 
-    const int box_w = screen_width;
-    const int box_h = 100;
-    box.box = {
-        0, (float)(screen_height - box_h - 12),
+    const int box_w = draw_buf.w;
+    const int box_h = 24;
+    Rectangle box_r = {
+        0, (float)(draw_buf.h - box_h),
         (float)box_w, (float)box_h
     };
+
     box.text = "The stone corridor stretches farther than your light should allow, its walls damp and scarred by something that once tried to escape. Every step you take feels louder than the last, and for a brief moment, you are certain the darkness ahead breathes in response to you.";
     box.percent_visible = 0;
     box.show_text = true;
+    box.set_box(box_r);
+
+//    font = LoadFont(ASSETS_PATH"ThaleahFat.ttf");
+    if (!IsFontValid(font)) 
+    {
+        font = GetFontDefault();
+    }
+
+    SetTextureFilter(font.texture, TEXTURE_FILTER_POINT);
+
+    mission_popup.tex = asset_m.get_asset<Texture>(ASSETS_PATH"papyrus.jpg");
+    mission_popup.scale = 0.5f;
 }
 
 void Game::destroy()
 {
+    UnloadFont(font);
+    UnloadRenderTexture(draw_buf.tex);
     UnloadShader(shader);
     CloseWindow();
 }
@@ -86,12 +115,34 @@ void Game::update()
         return;
     }
 
+    dt = GetFrameTime();
+
+    static int fps = 60;
+    if (IsKeyDown(KEY_O))
+    {
+        fps -= 1;
+        if (fps < 20)
+        {
+            fps = 20;
+        }
+
+        SetTargetFPS(fps);
+    }
+    if (IsKeyDown(KEY_P))
+    {
+        fps += 1;
+        if (fps > 244)
+        {
+            fps = 244;
+        }
+
+        SetTargetFPS(fps);
+    }
+
     if (IsKeyPressed(KEY_L))
     {
         debug_draw = !debug_draw;
     }
-
-    dt = GetFrameTime() * 1000;
 
     if (light.x > screen_width)
     {
@@ -126,23 +177,34 @@ void Game::update()
     }
 
     using namespace GameplaySystems;
-    player_system(world);
+    player_system(world, dt);
 
     collision_update_system(world, *this, tilemap);
     transform_update_system(world, *this);
+    interactable_update_system(world, *this);
     animated_drawable_system(world, asset_m);
 
     current_normal_map = ASSETS_PATH"normal_map.png";
 
-    box.update();
+    mission_popup.visible = true;
+
+    box.update(); 
+    mission_popup.update(dt);
 }
 
 void Game::draw()
 {
-    Texture2D* normal_map = asset_m.get_asset<Texture2D>(current_normal_map);
+    if (IsWindowResized())
+    {
+        screen_width = GetScreenWidth();
+        screen_height = GetScreenHeight();
+    }
 
-    BeginDrawing();
-    ClearBackground({20, 20, 20, 255});
+    const Texture2D* normal_map = asset_m.get_asset<Texture2D>(current_normal_map);
+
+//    BeginDrawing();
+    BeginTextureMode(draw_buf.tex);
+    ClearBackground({3, 3, 3, 255});
 
     BeginShaderMode(shader);
 
@@ -159,8 +221,10 @@ void Game::draw()
 
     EndShaderMode();
 
+    GameplaySystems::draw_ui_system(world, *this);
+
 //    DrawCircleLines((int)(light.x), (int)(light.y), light.radius, WHITE);
-    DrawRectangle((int)(light.x), (int)(light.y), 4, 4, WHITE);
+//    DrawRectangle((int)(light.x), (int)(light.y), 4, 4, WHITE);
 
     if (debug_draw)
     {
@@ -172,18 +236,30 @@ void Game::draw()
     int fps = GetFPS();
     char buf[512];
 
+    const int fontsz = 16;
     snprintf(buf, sizeof(buf), "FPS: %d", fps);
-    DrawText(buf, 0, y, 24, RED);
-    y += 24;
+    DrawText(buf, 0, y, fontsz, RED);
+    y += fontsz;
 
     snprintf(buf, sizeof(buf), "Light Radius: %f", light.radius);
-    DrawText(buf, 0, y, 24, RED);
-    y += 24;
+    DrawText(buf, 0, y, fontsz, RED);
+    y += fontsz;
 
     snprintf(buf, sizeof(buf), "Light Height: %f", light.height);
-    DrawText(buf, 0, y, 24, RED);
+    DrawText(buf, 0, y, fontsz, RED);
 
     box.draw();
+    mission_popup.draw(font, draw_buf);
+
+//    EndDrawing();
+    EndTextureMode();
+
+    BeginDrawing();
+    ClearBackground({20, 20, 20, 255});
+
+    DrawTexturePro(draw_buf.tex.texture, 
+    {0, 0, (float)(draw_buf.w), (float)(-(draw_buf.h))},
+    {0, 0, (float)screen_width, (float)screen_height}, {0, 0}, 0, WHITE);
 
     EndDrawing();
 }
@@ -258,7 +334,7 @@ void Game::draw_player_debug_overlay()
             player_collision->rect.width,
             player_collision->rect.height
         };
-        DrawRectangleLinesEx(rect, 2, RED);
+        DrawRectangleLinesEx(rect, 1, RED);
     }
 }
 
@@ -294,7 +370,7 @@ void Game::draw_tilemap_debug_overlay()
                 (float)tile_height
             };
 
-            DrawRectangleLinesEx(tile_rect, 2, RED);
+            DrawRectangleLinesEx(tile_rect, 1, RED);
         }
     }
 }
@@ -343,7 +419,6 @@ void Game::load_tileset(const std::string& filepath)
         tile.sheet_w = mf_tile->sheet_w;
         tile.sheet_h = mf_tile->sheet_h;
         tile.collidable = mf_tile->collidable;
-        printf("%d\n", tile.collidable);
 
         asset_m.load_texture(tile.texture_id);
         asset_m.load_tile(tile);
