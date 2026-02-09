@@ -1,21 +1,35 @@
 #include "light_source.h"
 
-void LightSource::set_uniforms(Shader& lighting_shader) const
+#include <string.h>
+#include <stdio.h>
+
+static const int light_count = 10;
+
+void LightSource::set_uniforms(Shader& lighting_shader, int shader_index) const
 {
+    if ((shader_index < 0) || (shader_index >= light_count))
+    {
+        TraceLog(LOG_WARNING, "Invalid shader index passed to light source");
+        return;
+    }
+
     Vector2 pos = {x, y};
+    char buf[64];
+    size_t bufsz = sizeof(buf) / sizeof(char);
 
-    int light_pos_uniform = GetShaderLocation(lighting_shader, "lightPos");
-    SetShaderValue(lighting_shader, light_pos_uniform, &pos, SHADER_UNIFORM_VEC2);
+    snprintf(buf, bufsz, "light[%d].pos", shader_index);
+    int pos_uniform = GetShaderLocation(lighting_shader, buf);
+    SetShaderValue(lighting_shader, pos_uniform, &pos, SHADER_UNIFORM_VEC2);
 
-    int light_radius_uniform = GetShaderLocation(lighting_shader, "lightRadius");
-    SetShaderValue(lighting_shader, light_radius_uniform, &radius, SHADER_UNIFORM_FLOAT);
+    snprintf(buf, bufsz, "light[%d].radius", shader_index);
+    int radius_uniform = GetShaderLocation(lighting_shader, buf);
+    SetShaderValue(lighting_shader, radius_uniform, &radius, SHADER_UNIFORM_FLOAT);
 
-    int light_height_uniform = GetShaderLocation(lighting_shader, "lightHeight");
-    SetShaderValue(lighting_shader, light_height_uniform, &height, SHADER_UNIFORM_FLOAT);
+    snprintf(buf, bufsz, "light[%d].height", shader_index);
+    int height_uniform = GetShaderLocation(lighting_shader, buf);
+    SetShaderValue(lighting_shader, height_uniform, &height, SHADER_UNIFORM_FLOAT);
 
-    int light_color_uniform = GetShaderLocation(lighting_shader, "lightColor");
-    SetShaderValue(lighting_shader, light_color_uniform, &color, SHADER_UNIFORM_VEC3);
-
-    int ambient_uniform = GetShaderLocation(lighting_shader, "ambientAttenuation");
-    SetShaderValue(lighting_shader, ambient_uniform, &ambient_attenuation, SHADER_UNIFORM_FLOAT);
+    snprintf(buf, bufsz, "light[%d].color", shader_index);
+    int color_uniform = GetShaderLocation(lighting_shader, buf);
+    SetShaderValue(lighting_shader, color_uniform, &color, SHADER_UNIFORM_VEC3);
 }

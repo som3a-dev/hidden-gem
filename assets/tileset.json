@@ -14,16 +14,15 @@
     },
     {
         "id": 3,
-        "texture_id": "torch.png",
-        "sheet_position": [0, 0],
-        "sheet_size": [4, 2]
+        "texture_id": "tomb_set.png",
+        "sheet_position": [6, 1],
+        "sheet_size": [12, 8],
+        "collidable": false
     },
     {
         "id": 4,
-        "texture_id": "table_with_paper.png"
-    },
-    {
-        "id": 5,
-        "texture_id": "table2.png"
+        "texture_id": "tomb_set.png",
+        "sheet_position": [1, 4],
+        "sheet_size": [12, 8]
     }
 ]

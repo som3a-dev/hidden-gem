@@ -15,8 +15,8 @@ void Game::init()
 {
     screen_width = 640 * 2;
     screen_height = 360 * 2;
-    tile_width = 24;
-    tile_height = 24;
+    tile_width = 36;
+    tile_height = 36;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screen_width, screen_height, "Hidden GEM");
@@ -40,6 +40,7 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"torch.png");
     asset_m.load_texture(ASSETS_PATH"emote22-smol.png");
     asset_m.load_texture(ASSETS_PATH"papyrus.jpg");
+    asset_m.load_texture(ASSETS_PATH"table2.png");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);
@@ -53,17 +54,17 @@ void Game::init()
     tilemap.create(screen_width / tile_width * 2, screen_height / tile_height * 2);
     load_tilemap(ASSETS_PATH"map.hgm");
 
-    create_torch(320, 283);
-    create_table(450, 303);
-    create_player(300, 220);
+    create_torch(520, 270);
+    create_table(450, 293);
+    create_player(300, 180);
 
 //    ToggleFullscreen();
 
     shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
-    light.radius = 700;
+    light.radius = 800;
     light.color = {1.0f, 0.9f, 0.6f};
     light.height = 70.0f;
-    light.ambient_attenuation = 0.02f;
+    ambient_attenuation = 0.2f;
 
     const int box_w = draw_buf.w;
     const int box_h = 24;
@@ -202,24 +203,39 @@ void Game::draw()
 
     const Texture2D* normal_map = asset_m.get_asset<Texture2D>(current_normal_map);
 
-//    BeginDrawing();
     BeginTextureMode(draw_buf.tex);
     ClearBackground({3, 3, 3, 255});
 
-    BeginShaderMode(shader);
+    static bool use_shader = true;
+    if (IsKeyPressed(KEY_I))
+    {
+        use_shader = !use_shader;
+    }
 
-    light.set_uniforms(shader);
+    if (use_shader)
+    {
+        BeginShaderMode(shader);
+    }
+
+    light.set_uniforms(shader, 5);
+    light.set_uniforms(shader, 1);
     if (normal_map)
     {
         int normal_map_uniform = GetShaderLocation(shader, "normalMap");
         SetShaderValueTexture(shader, normal_map_uniform, *normal_map);
     }
 
+    int ambient_uniform = GetShaderLocation(shader, "ambientAtt");
+    SetShaderValue(shader, ambient_uniform, &ambient_attenuation, SHADER_UNIFORM_FLOAT);
+
     draw_tilemap();
 
     GameplaySystems::render_drawable_system(world, asset_m);
 
-    EndShaderMode();
+    if (use_shader)
+    {
+        EndShaderMode();
+    }
 
     GameplaySystems::draw_ui_system(world, *this);
 
@@ -387,10 +403,6 @@ void Game::load_tilemap(const std::string& filepath)
             if (tile == MF_TILE_EMPTY)
             {
                 tilemap.set_tile(x, y, EMPTY_TILE);
-            }
-            else if (tile == 3)
-            {
-                create_torch((float)(x * tile_width), (float)(y * tile_height));
             }
             else
             {
