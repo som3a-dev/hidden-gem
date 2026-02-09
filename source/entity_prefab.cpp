@@ -83,8 +83,8 @@ void Game::create_torch(float x, float y)
     world.drawables.add_component(entity, std::move(drawable));
     world.animated_drawables.add_component(entity, std::move(animated_drawable));
 
-    light.x = transform.x + 24;
-    light.y = transform.y + 12;
+    torch_light.x = transform.x + 24;
+    torch_light.y = transform.y + 12;
 }
 
 void Game::create_table(float x, float y)

@@ -41,6 +41,8 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"emote22-smol.png");
     asset_m.load_texture(ASSETS_PATH"papyrus.jpg");
     asset_m.load_texture(ASSETS_PATH"table2.png");
+    asset_m.load_texture(ASSETS_PATH"1.png");
+    asset_m.load_texture(ASSETS_PATH"win_wood.png");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);
@@ -61,10 +63,18 @@ void Game::init()
 //    ToggleFullscreen();
 
     shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
-    light.radius = 800;
-    light.color = {1.0f, 0.9f, 0.6f};
-    light.height = 70.0f;
-    ambient_attenuation = 0.2f;
+
+    torch_light.radius = 300;
+    torch_light.color = {1.0f, 0.9f, 0.6f};
+    torch_light.height = 70.0f;
+
+    window_light.radius = 200;
+    window_light.height = 200.0f;
+    window_light.color = {81.0f / 255, 81.0f / 255, 176.0f / 255};
+    window_light.x = 190;
+    window_light.y = 180 + 50;
+
+    ambient_attenuation = 0.15f;
 
     const int box_w = draw_buf.w;
     const int box_h = 24;
@@ -145,36 +155,36 @@ void Game::update()
         debug_draw = !debug_draw;
     }
 
-    if (light.x > screen_width)
+    if (torch_light.x > screen_width)
     {
-        light.x = -100;
+        torch_light.x = -100;
     }
 
     if (IsKeyDown(KEY_UP))
     {
-        light.radius += 5;
+        torch_light.radius += 5;
     }
     else if (IsKeyDown(KEY_DOWN))
     {
-        light.radius -= 5;
+        torch_light.radius -= 5;
     }
 
     if (IsKeyDown(KEY_RIGHT))
     {
-        light.height += 5;
+        torch_light.height += 5;
     }
     else if (IsKeyDown(KEY_LEFT))
     {
-        light.height -= 5;
+        torch_light.height -= 5;
     }
 
-    if (light.radius < 0)
+    if (torch_light.radius < 0)
     {
-        light.radius = 0;
+        torch_light.radius = 0;
     }
-    if (light.height < 0)
+    if (torch_light.height < 0)
     {
-        light.height = 0;
+        torch_light.height = 0;
     }
 
     using namespace GameplaySystems;
@@ -206,6 +216,9 @@ void Game::draw()
     BeginTextureMode(draw_buf.tex);
     ClearBackground({3, 3, 3, 255});
 
+    Texture* win = asset_m.get_asset<Texture>(ASSETS_PATH"win_wood.png");
+    assert(win);
+
     static bool use_shader = true;
     if (IsKeyPressed(KEY_I))
     {
@@ -217,8 +230,8 @@ void Game::draw()
         BeginShaderMode(shader);
     }
 
-    light.set_uniforms(shader, 5);
-    light.set_uniforms(shader, 1);
+    torch_light.set_uniforms(shader, 0);
+    window_light.set_uniforms(shader, 1);
     if (normal_map)
     {
         int normal_map_uniform = GetShaderLocation(shader, "normalMap");
@@ -230,6 +243,22 @@ void Game::draw()
 
     draw_tilemap();
 
+    if (use_shader)
+    {
+//        EndShaderMode();
+    }
+
+    float window_scale = 0.5f;
+    float window_x = (window_light.x - win->width * window_scale / 2);
+    float window_y = (window_light.y - win->height * window_scale);
+
+    DrawTextureEx(*win, {window_x, window_y}, 0, window_scale, WHITE);
+
+    if (use_shader)
+    {
+//        BeginShaderMode(shader);
+    }
+
     GameplaySystems::render_drawable_system(world, asset_m);
 
     if (use_shader)
@@ -239,33 +268,46 @@ void Game::draw()
 
     GameplaySystems::draw_ui_system(world, *this);
 
-//    DrawCircleLines((int)(light.x), (int)(light.y), light.radius, WHITE);
-//    DrawRectangle((int)(light.x), (int)(light.y), 4, 4, WHITE);
 
     if (debug_draw)
     {
         draw_player_debug_overlay();
         draw_tilemap_debug_overlay();
+
+        int y = 0;
+        int fps = GetFPS();
+        char buf[512];
+
+        const int fontsz = 16;
+        snprintf(buf, sizeof(buf), "FPS: %d", fps);
+        DrawText(buf, 0, y, fontsz, RED);
+        y += fontsz;
+
+        ECS::TransformComponent* player_trans = world.transforms.get_component(player);
+        assert(player_trans);
+
+        snprintf(buf, sizeof(buf), "Player: %d, %d", (int)(roundf(player_trans->x)),
+        (int)(roundf(player_trans->y)));
+        DrawText(buf, 0, y, fontsz, RED);
+        y += fontsz;
+
+        Color window_color = {
+            (unsigned char)(255 * window_light.color.r),
+            (unsigned char)(255 * window_light.color.g),
+            (unsigned char)(255 * window_light.color.b),
+            255
+        };
+        DrawRectangle((int)(window_light.x), (int)(window_light.y), 4, 4, window_color);
+        DrawCircleLines((int)(window_light.x), (int)(window_light.y), window_light.radius, window_color);
+
+        DrawCircleLines((int)(torch_light.x), (int)(torch_light.y), torch_light.radius, WHITE);
+        DrawRectangle((int)(torch_light.x), (int)(torch_light.y), 4, 4, WHITE);
     }
-
-    int y = 0;
-    int fps = GetFPS();
-    char buf[512];
-
-    const int fontsz = 16;
-    snprintf(buf, sizeof(buf), "FPS: %d", fps);
-    DrawText(buf, 0, y, fontsz, RED);
-    y += fontsz;
-
-    snprintf(buf, sizeof(buf), "Light Radius: %f", light.radius);
-    DrawText(buf, 0, y, fontsz, RED);
-    y += fontsz;
-
-    snprintf(buf, sizeof(buf), "Light Height: %f", light.height);
-    DrawText(buf, 0, y, fontsz, RED);
 
     box.draw();
     mission_popup.draw(font, draw_buf);
+
+
 
 //    EndDrawing();
     EndTextureMode();

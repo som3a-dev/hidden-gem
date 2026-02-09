@@ -41,11 +41,8 @@ struct Game
 
     int player;
 
-    LightSource light;
-
-    Vector2 light_pos;
-    float light_radius;
-    LightColor light_color;
+    LightSource torch_light;
+    LightSource window_light;
     float ambient_attenuation;
     std::string current_normal_map;
 
