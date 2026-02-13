@@ -1,7 +1,7 @@
 #ifndef _GAME_H
 #define _GAME_H
 
-#include "raylib.h"
+#include <raylib.h>
 #include "asset_manager.h"
 #include "frame_animation.h"
 #include "ecs/world.h"
@@ -13,9 +13,25 @@
 
 #include <vector>
 
+struct QuestionPanel
+{
+    bool visible = false;
+    PopupImage background;
+
+    QuestionPanel();
+
+    void set_scale(float scale);
+    void set_background(const AssetManager& asset_m, const std::string& texture_id);
+
+    void flip();
+
+    void update(float dt);
+    void draw(Game* game, const Font& font, const GameDrawBuffer& draw_buf) const;
+};
 
 struct Game
 {
+public:
     bool running;
     int screen_width;
     int screen_height;
@@ -26,8 +42,6 @@ struct Game
 
     bool debug_draw;
     bool show_paper;
-
-    float mission_paper_scale;
 
     AssetManager asset_m;
 
@@ -47,16 +61,38 @@ struct Game
     std::string current_normal_map;
 
     Textbox box;
-    PopupImage mission_popup;
+    QuestionPanel question_panel;
 
     void init();
     void destroy();
-
     void loop();
 
-private:
+    // Some counterparts of raylib functions, matching in args and case
+
+    // Queue text to be drawn in the UI/Screen pass rather than the draw buffer pass
+    // Positions here are the logical positions as would be drawn in the draw buffer,
+    // They get scaled to the screen.
+    void QueueText(const char* text, int x, int y, int fontsz, Color color);
+    void QueueTextEx(Font _font, const char* text, Vector2 pos, float fontsz, float spacing, Color color);
+
+private:    
+    struct TextDrawCall
+    {
+        Font font;
+        std::string text;
+        Vector2 pos;
+        float fontsz;
+        float spacing;
+        Color color;
+    };
+
+    std::vector<TextDrawCall> td_calls;
+
     void update();
     void draw();
+   
+    // Draw all the TextDrawCalls for the frame, and clear the list
+    void draw_td_calls();
 
     void draw_tilemap();
 
@@ -72,3 +108,6 @@ private:
 };
 
 #endif
+
+
+//NEXT: Mission answering, UI, Game Menu, Game intro, Camera, Sound, Mission progress, Web/Android build

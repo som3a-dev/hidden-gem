@@ -12,16 +12,19 @@ enum class PopupImageState
     Popdown
 };
 
+struct Game;
+
 struct PopupImage
 {
     bool visible = false;
     PopupImageState state = PopupImageState::Hidden;
 
+    // TODO(): Should UI elements store the texture, or the texture id
     Texture* tex = NULL;
     float scale = 1;
 
     void update(float dt);
-    void draw(const Font& font, const GameDrawBuffer& draw_buf) const;
+    void draw(Game* game, const Font& font, const GameDrawBuffer& draw_buf) const;
 
     // Flip the state to either show or hide the popup
     void flip();

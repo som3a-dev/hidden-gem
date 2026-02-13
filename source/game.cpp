@@ -64,17 +64,17 @@ void Game::init()
 
     shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
 
-    torch_light.radius = 300;
+    torch_light.radius = 200;
     torch_light.color = {1.0f, 0.9f, 0.6f};
     torch_light.height = 70.0f;
 
     window_light.radius = 200;
     window_light.height = 200.0f;
-    window_light.color = {81.0f / 255, 81.0f / 255, 176.0f / 255};
+    window_light.color = {172.0f / 255, 172.0f / 255, 193.0f / 255};
     window_light.x = 190;
     window_light.y = 180 + 50;
 
-    ambient_attenuation = 0.15f;
+    ambient_attenuation = 0.05f;
 
     const int box_w = draw_buf.w;
     const int box_h = 24;
@@ -85,19 +85,19 @@ void Game::init()
 
     box.text = "The stone corridor stretches farther than your light should allow, its walls damp and scarred by something that once tried to escape. Every step you take feels louder than the last, and for a brief moment, you are certain the darkness ahead breathes in response to you.";
     box.percent_visible = 0;
+//    box.visible = true;
     box.show_text = true;
     box.set_box(box_r);
 
-//    font = LoadFont(ASSETS_PATH"ThaleahFat.ttf");
+    question_panel.set_background(asset_m, ASSETS_PATH"papyrus.jpg");
+    question_panel.set_scale(0.8f);
+    question_panel.visible = true;
+
+    font = LoadFontEx(ASSETS_PATH"AtkinsonHyperlegible-Regular.ttf", 64, NULL, 0);
     if (!IsFontValid(font)) 
     {
         font = GetFontDefault();
     }
-
-    SetTextureFilter(font.texture, TEXTURE_FILTER_POINT);
-
-    mission_popup.tex = asset_m.get_asset<Texture>(ASSETS_PATH"papyrus.jpg");
-    mission_popup.scale = 0.5f;
 }
 
 void Game::destroy()
@@ -118,6 +118,36 @@ void Game::loop()
     }
 }
 
+void Game::QueueText(const char *text, int x, int y, int fontsz, Color color)
+{
+    assert(text);
+
+    TextDrawCall call = {0};
+    call.font = font;
+    call.text = text;
+    call.pos = {(float)x, (float)y};
+    call.fontsz = (float)fontsz;
+    call.spacing = 1;
+    call.color = color;
+
+    td_calls.push_back(call);
+}
+
+void Game::QueueTextEx(Font _font, const char *text, Vector2 pos, float fontsz, float spacing, Color color)
+{
+    assert(text);
+
+    TextDrawCall call = {0};
+    call.font = _font;
+    call.text = text;
+    call.pos = pos;
+    call.fontsz = fontsz;
+    call.spacing = spacing;
+    call.color = color;
+
+    td_calls.push_back(call);
+}
+
 void Game::update()
 {
     if (WindowShouldClose())
@@ -125,8 +155,18 @@ void Game::update()
         running = false;
         return;
     }
+    if (IsKeyPressed(KEY_F11))
+    {
+        ToggleFullscreen();
+    }
+//    if (IsWindowResized())
+    {
+        screen_width = GetScreenWidth();
+        screen_height = GetScreenHeight();
+    }
 
-    dt = GetFrameTime();
+//    dt = GetFrameTime();
+    dt = 0.016f;
 
     static int fps = 60;
     if (IsKeyDown(KEY_O))
@@ -197,20 +237,12 @@ void Game::update()
 
     current_normal_map = ASSETS_PATH"normal_map.png";
 
-    mission_popup.visible = true;
-
     box.update(); 
-    mission_popup.update(dt);
+    question_panel.update(dt);
 }
 
 void Game::draw()
 {
-    if (IsWindowResized())
-    {
-        screen_width = GetScreenWidth();
-        screen_height = GetScreenHeight();
-    }
-
     const Texture2D* normal_map = asset_m.get_asset<Texture2D>(current_normal_map);
 
     BeginTextureMode(draw_buf.tex);
@@ -268,7 +300,6 @@ void Game::draw()
 
     GameplaySystems::draw_ui_system(world, *this);
 
-
     if (debug_draw)
     {
         draw_player_debug_overlay();
@@ -305,11 +336,10 @@ void Game::draw()
     }
 
     box.draw();
-    mission_popup.draw(font, draw_buf);
+    question_panel.draw(this, font, draw_buf);
 
+    QueueTextEx(font, "Whereas recognition of the inherent dignity", {20, 20}, 16, 2, WHITE);
 
-
-//    EndDrawing();
     EndTextureMode();
 
     BeginDrawing();
@@ -319,7 +349,29 @@ void Game::draw()
     {0, 0, (float)(draw_buf.w), (float)(-(draw_buf.h))},
     {0, 0, (float)screen_width, (float)screen_height}, {0, 0}, 0, WHITE);
 
+    draw_td_calls();
+
     EndDrawing();
+}
+
+void Game::draw_td_calls()
+{
+    for (const TextDrawCall& call : td_calls)
+    {
+        float scalex = (float)((float)(screen_width) / draw_buf.w);
+        float scaley = (float)((float)(screen_height) / draw_buf.h);
+
+        Vector2 pos;
+        pos.x = call.pos.x * scalex;
+        pos.y = call.pos.y * scaley;
+
+        float fontsz = call.fontsz * scaley;
+
+        DrawTextEx(call.font, call.text.c_str(), pos,
+        fontsz, call.spacing, call.color);
+    }
+
+    td_calls.clear();
 }
 
 void Game::draw_tilemap()
@@ -479,4 +531,41 @@ void Game::load_tileset(const std::string& filepath)
     }
 
     mf_load_tileset_free(&tiles, tiles_count);
+}
+
+QuestionPanel::QuestionPanel()
+{
+    // TODO(): A default background
+}
+
+void QuestionPanel::set_scale(float scale)
+{
+    background.scale = scale;
+}
+
+void QuestionPanel::set_background(const AssetManager& asset_m, const std::string& texture_id)
+{
+    background.tex = asset_m.get_asset<Texture>(texture_id);
+}
+
+void QuestionPanel::flip()
+{
+    if (!visible) return;
+
+    background.flip();
+}
+
+void QuestionPanel::update(float dt)
+{
+    if (!visible) return;
+
+    background.visible = true;
+    background.update(dt);
+}
+
+void QuestionPanel::draw(Game* game, const Font& font, const GameDrawBuffer& draw_buf) const
+{
+    if (!visible) return;
+
+    background.draw(game, font, draw_buf);
 }

@@ -161,8 +161,8 @@ namespace GameplaySystems
 
                     if (IsKeyPressed(KEY_K))
                     {
-                        game.mission_popup.flip();
-                        printf("press\n");
+                        // TODO(): Remove this damn hack
+                        game.question_panel.flip();
                     }
 
                     break;
@@ -323,8 +323,8 @@ namespace GameplaySystems
                     int text_y = (int)(trans->y + col->rect.y /*+ player_col->rect.height*/);
                     Vector2 text_pos = {(float)text_x, (float)text_y};
 
-                    DrawTextEx(game.font, "[K] Interact", {(float)(text_x + 1), (float)(text_y + 1)}, 10, 1, DARKGRAY);
-                    DrawTextEx(game.font, "[K] Interact", text_pos, 10, 1, WHITE);
+                    game.QueueTextEx(game.font, "[K] Interact", {(float)(text_x + 1), (float)(text_y + 1)}, 10, 1, DARKGRAY);
+                    game.QueueTextEx(game.font, "[K] Interact", text_pos, 10, 1, WHITE);
                     break;
                 }
             }

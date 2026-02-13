@@ -8,7 +8,7 @@
 
 static int run()
 {
-    Game game = {0};
+    Game game{};
     game.init();
     game.loop();
     game.destroy();
