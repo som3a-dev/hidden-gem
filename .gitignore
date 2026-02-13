@@ -8,3 +8,4 @@ out/
 CMakeSettings.json
 sources/cloc.exe
 map-editor/source/cloc.exe
+source/cloc.exe
