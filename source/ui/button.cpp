@@ -37,24 +37,39 @@ namespace UI
     {
         if (!visible) return;
 
-        Color color = BEIGE;
+        Color color = {255, 255, 255, 170};
 
         if (state & BUTTON_PRESSED)
         {
-            color = RED;
+            color = {200, 200, 200, 170};
         }
         else if (state & BUTTON_HOVERED)
         {
-            color = BROWN;
+            color = {170, 170, 170, 170};
         }
 
-        DrawRectangleRec(rect, color);
+        if (texture)
+        {
+            DrawTexturePro(*texture, {0, 0,
+            (float)(texture->width), (float)(texture->height)},
+            rect, {0, 0}, 0, color);
+        }
 
-        Vector2 text_sz = MeasureTextEx(font, text.c_str(), 16, 1);
+        if (outline)
+        {
+            DrawRectangleLinesEx(rect, 1, BLACK);
+        }
+
+        Vector2 text_sz = MeasureTextEx(font, text.c_str(), 12, 1);
         Vector2 text_pos;
         text_pos.x = rect.x + (rect.width / 2)  - text_sz.x / 2;
         text_pos.y = rect.y + (rect.height / 2) - text_sz.y / 2;
 
-        game->QueueTextEx(font, text.c_str(), text_pos, 16, 1, BLACK);
+        game->QueueTextEx(font, text.c_str(), text_pos, 12, 1, BLACK);
+    }
+
+    void Button::set_texture(Texture *tex)
+    {
+        texture = tex;
     }
 }

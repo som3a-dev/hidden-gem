@@ -150,8 +150,6 @@ namespace UI
                 rect.width, rect.height
             },
             spacing, color);
-
-//            DrawRectangleLinesEx(rect, 1, GREEN);
         }
     }
 

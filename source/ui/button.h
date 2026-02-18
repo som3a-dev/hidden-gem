@@ -22,10 +22,18 @@ namespace UI
         Rectangle rect = {0};
         int state = BUTTON_IDLE;
 
+        bool outline = false;
+
         std::string text = "Button";
 
         void update(Game* game);
         void draw(Game* game, const Font& font) const;
+
+        // Sets the background texture of the button
+        void set_texture(Texture* tex);
+
+        private:
+        Texture* texture = NULL;
     };
 }
 

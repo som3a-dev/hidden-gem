@@ -43,6 +43,7 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"table2.png");
     asset_m.load_texture(ASSETS_PATH"1.png");
     asset_m.load_texture(ASSETS_PATH"win_wood.png");
+    asset_m.load_texture(ASSETS_PATH"wood.jpg");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);

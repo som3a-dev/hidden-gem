@@ -21,11 +21,6 @@ namespace UI
         background.center_y = (int)(rect.y + rect.height / 2);
         background.w = (int)(rect.width);
         background.h = (int)(rect.height);
-
-        buttons[0].rect.width = 150;
-        buttons[0].rect.height = 50;
-        buttons[0].rect.x = (float)(rect.x) + 48;
-        buttons[0].rect.y = (rect.y + rect.height) - buttons[0].rect.height - 48;
     }
 
     void QuestionPanel::set_background(const AssetManager& asset_m, const std::string& texture_id)
@@ -60,7 +55,7 @@ namespace UI
 
             float button_w = option_rect.width / 2;
             float button_h = option_rect.height / 2;
-            const int button_margin = 4;
+            const int button_margin = 0;
             buttons[0].rect = {
                 option_rect.x + button_margin, option_rect.y + button_margin,
                 button_w, button_h
@@ -88,6 +83,9 @@ namespace UI
         {
             button.visible = background.state == PopupImageState::Shown;
             button.update(game);
+
+            button.set_texture(game->asset_m.get_asset<Texture>(ASSETS_PATH"wood.jpg"));
+            button.outline = true;
         }
     }
 
@@ -101,10 +99,5 @@ namespace UI
         {
             button.draw(game, font);
         }
-
-/*        if (background.state == PopupImageState::Shown)
-        {
-            DrawRectangleLinesEx(option_rect, 2, WHITE);
-        }*/
     }
 }
