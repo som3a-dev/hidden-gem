@@ -1,4 +1,7 @@
 #include "question_panel.h"
+#include "game.h"
+
+#include <assert.h>
 
 namespace UI
 {
@@ -12,9 +15,23 @@ namespace UI
         background.scale = scale;
     }
 
+    void QuestionPanel::set_rect(Rectangle rect)
+    {
+        background.center_x = (int)(rect.x + rect.width / 2);
+        background.center_y = (int)(rect.y + rect.height / 2);
+        background.w = (int)(rect.width);
+        background.h = (int)(rect.height);
+
+        buttons[0].rect.width = 150;
+        buttons[0].rect.height = 50;
+        buttons[0].rect.x = (float)(rect.x) + 48;
+        buttons[0].rect.y = (rect.y + rect.height) - buttons[0].rect.height - 48;
+    }
+
     void QuestionPanel::set_background(const AssetManager& asset_m, const std::string& texture_id)
     {
         background.tex = asset_m.get_asset<Texture>(texture_id);
+        assert(background.tex);
     }
 
     void QuestionPanel::flip()
@@ -24,18 +41,70 @@ namespace UI
         background.flip();
     }
 
-    void QuestionPanel::update(float dt)
+    void QuestionPanel::update(Game* game) 
     {
-        if (!visible) return;
+        if (!visible)
+        {
+            background.visible = false;
+        }
 
         background.visible = true;
-        background.update(dt);
+        background.update(game);
+
+        if (background.state == PopupImageState::Shown)
+        {
+            option_rect.width = background.rect.width;
+            option_rect.height = background.rect.height / 2.5f;
+            option_rect.x = background.rect.x;
+            option_rect.y = background.rect.y + (background.rect.height - option_rect.height);
+
+            float button_w = option_rect.width / 2;
+            float button_h = option_rect.height / 2;
+            const int button_margin = 4;
+            buttons[0].rect = {
+                option_rect.x + button_margin, option_rect.y + button_margin,
+                button_w, button_h
+            };
+
+            buttons[1].rect = {
+                option_rect.x + button_margin, option_rect.y + option_rect.height - button_h - button_margin,
+                button_w, button_h
+            };
+
+            buttons[2].rect = {
+                option_rect.x + option_rect.width - button_w - button_margin,
+                option_rect.y + button_margin,
+                button_w, button_h
+            };
+
+            buttons[3].rect = {
+                option_rect.x + option_rect.width - button_w - button_margin,
+                option_rect.y + option_rect.height - button_h - button_margin,
+                button_w, button_h
+            };
+        }
+
+        for (Button& button : buttons)
+        {
+            button.visible = background.state == PopupImageState::Shown;
+            button.update(game);
+        }
     }
 
-    void QuestionPanel::draw(Game* game, const Font& font, const GameDrawBuffer& draw_buf) const
+    void QuestionPanel::draw(Game* game, const Font& font) const
     {
         if (!visible) return;
 
-        background.draw(game, font, draw_buf);
+        background.draw(game, font);
+
+        for (const Button& button : buttons)
+        {
+            button.draw(game, font);
+        }
+
+/*        if (background.state == PopupImageState::Shown)
+        {
+            DrawRectangleLinesEx(option_rect, 2, WHITE);
+        }*/
     }
-};
+}

@@ -93,6 +93,13 @@ void Game::init()
     question_panel.set_scale(0.8f);
     question_panel.visible = true;
 
+    Rectangle panel_rect;
+    panel_rect.width = 400;
+    panel_rect.height = 300;
+    panel_rect.x = (float)(draw_buf.w / 2) - panel_rect.width / 2;
+    panel_rect.y = (float)(draw_buf.h / 2) - panel_rect.height / 2;
+    question_panel.set_rect(panel_rect);
+
     font = LoadFontEx(ASSETS_PATH"AtkinsonHyperlegible-Regular.ttf", 64, NULL, 0);
     if (!IsFontValid(font)) 
     {
@@ -238,7 +245,7 @@ void Game::update()
     current_normal_map = ASSETS_PATH"normal_map.png";
 
     box.update(); 
-    question_panel.update(dt);
+    question_panel.update(this);
 }
 
 void Game::draw()
@@ -336,9 +343,9 @@ void Game::draw()
     }
 
     box.draw();
-    question_panel.draw(this, font, draw_buf);
+    question_panel.draw(this, font);
 
-    QueueTextEx(font, "Whereas recognition of the inherent dignity", {20, 20}, 16, 2, WHITE);
+//    QueueTextEx(font, "Whereas recognition of the inherent dignity", {20, 20}, 16, 2, WHITE);
 
     EndTextureMode();
 
@@ -358,8 +365,8 @@ void Game::draw_td_calls()
 {
     for (const TextDrawCall& call : td_calls)
     {
-        float scalex = (float)((float)(screen_width) / draw_buf.w);
-        float scaley = (float)((float)(screen_height) / draw_buf.h);
+        float scalex = ((float)(screen_width) / draw_buf.w);
+        float scaley = ((float)(screen_height) / draw_buf.h);
 
         Vector2 pos;
         pos.x = call.pos.x * scalex;

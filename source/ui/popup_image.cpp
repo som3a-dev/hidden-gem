@@ -54,7 +54,7 @@ static void draw_boxed_text(Game* game, const Font& font, const std::string& tex
 
 namespace UI
 {
-    void PopupImage::update(float dt)
+    void PopupImage::update(Game* game)
     {
         if (!visible)
         {
@@ -65,7 +65,7 @@ namespace UI
         {
             case PopupImageState::Popup:
             {
-                anim_scale += popup_speed * dt;
+                anim_scale += popup_speed * game->dt;
                 if (anim_scale > 1)
                 {
                     anim_scale = 1;
@@ -75,7 +75,7 @@ namespace UI
 
             case PopupImageState::Popdown:
             {
-                anim_scale -= popup_speed * dt;
+                anim_scale -= popup_speed * game->dt;
                 if (anim_scale < 0)
                 {
                     anim_scale = 0;
@@ -89,9 +89,25 @@ namespace UI
             } break;
         }
 
+        // Update rect
+        float rl_scale = scale * anim_scale;
+
+        if ((w == 0) || (h == 0))
+        {
+            rect.width =  tex->width * rl_scale;
+            rect.height = tex->height * rl_scale;
+        }
+        else
+        {
+            rect.width =  w * rl_scale;
+            rect.height = h * rl_scale;
+        }
+
+        rect.x = (float)(center_x) - rect.width / 2;
+        rect.y = (float)(center_y) - rect.height / 2;
     }
 
-    void PopupImage::draw(Game* game, const Font& font, const GameDrawBuffer& draw_buf) const
+    void PopupImage::draw(Game* game, const Font& font) const
     {
         assert(game);
         assert(tex);
@@ -106,49 +122,36 @@ namespace UI
             return;
         }
 
-        float rl_scale = scale * anim_scale;
-
-        Vector2 pos;
-        pos.x = (float)(draw_buf.w / 2) - (tex->width * rl_scale / 2);
-        pos.y = (float)(draw_buf.h / 2) - (tex->height * rl_scale / 2);
-
         Color color;
         color.r = 0x12;
         color.g = 0x11;
         color.b = 0x0f;
         color.a = 0xff;
 
-        DrawTextureEx(*tex, pos, 0, rl_scale, WHITE);
+        DrawTexturePro(*tex,
+        {0, 0, (float)(tex->width), (float)(tex->height)},
+        rect, {0,0}, 0, WHITE);
 
         if (state == PopupImageState::Shown)
         {
             const float spacing = 1;
 
-            Vector2 text_pos = {pos.x + 4, pos.y + 4};
-            Vector2 text_shadow_pos = {text_pos.x + 1, text_pos.y + 1};
-            const int text_sz = 20;
+            Vector2 text_pos = {rect.x + 4, rect.y + 4};
 
-    //        DrawTextEx(font, "Mission 1: ", text_shadow_pos, 20, spacing, BLACK);
             game->QueueTextEx(font, "Mission 1: ", text_pos, 20, spacing, color);
 
             Vector2 body_pos = {text_pos.x, text_pos.y + 36};
-            Vector2 body_shadow_pos = {body_pos.x + 1, body_pos.y + 1};
             const std::string body = "The next scroll is hidden inside the Pharaoh`s chariot. Can you uncover How many spokes does each wheel have, and how does this design help?";
 
-    /*        draw_boxed_text(font, body, body_shadow_pos,
-            10,
-            {
-                body_shadow_pos.x, body_shadow_pos.y,
-                (float)(tex->width * scale), (float)(tex->height * scale)
-            },
-            spacing, BLACK);*/
             draw_boxed_text(game, font, body, body_pos,
             16,
             {
                 body_pos.x, body_pos.y,
-                (float)(tex->width * scale), (float)(tex->height * scale)
+                rect.width, rect.height
             },
             spacing, color);
+
+//            DrawRectangleLinesEx(rect, 1, GREEN);
         }
     }
 
