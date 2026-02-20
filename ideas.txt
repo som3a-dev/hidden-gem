@@ -5,3 +5,7 @@ Mario maker style level creator
 Enemy infighting
 
 Add game of life in the level editor for fun
+
+a bird companion that follows you around
+
+Some kind of enemies/npc in the demo
