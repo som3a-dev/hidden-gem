@@ -24,6 +24,11 @@ namespace UI
 
         bool outline = false;
 
+        Color text_color = WHITE;
+
+        void (*on_press)(void* parent, Button* button) = nullptr;
+        void* parent = nullptr;
+
         std::string text = "Button";
 
         void update(Game* game);
@@ -33,7 +38,7 @@ namespace UI
         void set_texture(Texture* tex);
 
         private:
-        Texture* texture = NULL;
+        Texture* texture = nullptr;
     };
 }
 

@@ -4,6 +4,7 @@
 #include "asset_manager.h"
 #include "popup_image.h"
 #include "button.h"
+#include "timer.h"
 
 #include <array>
 
@@ -26,13 +27,17 @@ namespace UI
         void update(Game* game);
         void draw(Game* game, const Font& font) const; 
 
+        static void on_button_press(void* panel, Button* button);
+        static void on_timer_timeout(void* panel, void* user_data);
+
     private:
         PopupImage background;
+        Timer timer;
 
         std::array<Button, 4> buttons;
         Rectangle option_rect;
-//        Button button;
     };
 }
+
 
 #endif

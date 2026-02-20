@@ -18,7 +18,7 @@ namespace UI
         {
             state |= BUTTON_HOVERED;
 
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 state |= BUTTON_PRESSED;
             }
@@ -30,6 +30,14 @@ namespace UI
         else
         {
             state = BUTTON_IDLE;
+        }
+
+        if (state & BUTTON_PRESSED)
+        {
+            if (on_press)
+            {
+                on_press(parent, this);
+            }
         }
     }
 
@@ -65,7 +73,7 @@ namespace UI
         text_pos.x = rect.x + (rect.width / 2)  - text_sz.x / 2;
         text_pos.y = rect.y + (rect.height / 2) - text_sz.y / 2;
 
-        game->QueueTextEx(font, text.c_str(), text_pos, 12, 1, BLACK);
+        game->QueueTextEx(font, text.c_str(), text_pos, 12, 1, text_color);
     }
 
     void Button::set_texture(Texture *tex)

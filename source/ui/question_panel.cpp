@@ -2,12 +2,27 @@
 #include "game.h"
 
 #include <assert.h>
+#include <iostream>
 
 namespace UI
 {
     QuestionPanel::QuestionPanel()
     {
         // TODO(): A default background
+        buttons[0].text = "Answer1";
+        buttons[1].text = "Answer2";
+        buttons[2].text = "Answer3";
+        buttons[3].text = "Answer4";
+
+        for (Button& button : buttons)
+        {
+            button.on_press = on_button_press;
+            button.parent = this;
+        }
+
+        timer.on_timeout = on_timer_timeout;
+        timer.parent = this;
+        timer.user_data = buttons.data();
     }
 
     void QuestionPanel::set_scale(float scale)
@@ -42,6 +57,8 @@ namespace UI
         {
             background.visible = false;
         }
+
+        timer.update();
 
         background.visible = true;
         background.update(game);
@@ -99,5 +116,50 @@ namespace UI
         {
             button.draw(game, font);
         }
+    }
+
+    void QuestionPanel::on_button_press(void* panel, Button* button)
+    {
+        if (!panel)
+        {
+            return;
+        }
+        if (!button)
+        {
+            return;
+        }
+
+        // reset other buttons color changes
+
+        QuestionPanel* p = (QuestionPanel*)panel;
+
+        for (Button& button : p->buttons)
+        {
+            button.text_color = WHITE;
+        }
+
+        if (button->text == "Answer2")
+        {
+            std::cout << "Correct" << std::endl;
+            button->text_color = GREEN;
+        }
+        else
+        {
+            std::cout << "Incorrect" << std::endl;
+            button->text_color = RED;
+        }
+
+        p->timer.start();
+        p->timer.user_data = button;
+    }
+
+    void QuestionPanel::on_timer_timeout(void *panel, void* user_data)
+    {
+        if (!panel) return;
+        if (!user_data) return;
+
+        QuestionPanel* p = (QuestionPanel*)panel;
+        Button* button = (Button*)user_data;
+        button->text_color = WHITE;
     }
 }
