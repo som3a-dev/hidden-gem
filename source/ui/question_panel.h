@@ -5,6 +5,7 @@
 #include "popup_image.h"
 #include "button.h"
 #include "timer.h"
+#include "question.h"
 
 #include <array>
 
@@ -21,6 +22,7 @@ namespace UI
         void set_scale(float scale);
         void set_rect(Rectangle rect);
         void set_background(const AssetManager& asset_m, const std::string& texture_id);
+        void set_question(const QuestionData& _data);
 
         void flip();
 
@@ -36,6 +38,8 @@ namespace UI
 
         std::array<Button, 4> buttons;
         Rectangle option_rect;
+
+        QuestionData data;
     };
 }
 

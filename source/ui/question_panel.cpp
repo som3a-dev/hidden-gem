@@ -55,11 +55,6 @@ namespace UI
     QuestionPanel::QuestionPanel()
     {
         // TODO(): A default background
-        buttons[0].text = "Answer1";
-        buttons[1].text = "Answer2";
-        buttons[2].text = "Answer3";
-        buttons[3].text = "Answer4";
-
         for (Button& button : buttons)
         {
             button.on_press = on_button_press;
@@ -68,7 +63,6 @@ namespace UI
 
         timer.on_timeout = on_timer_timeout;
         timer.parent = this;
-        timer.user_data = buttons.data();
     }
 
     void QuestionPanel::set_scale(float scale)
@@ -88,6 +82,16 @@ namespace UI
     {
         background.tex = asset_m.get_asset<Texture>(texture_id);
         assert(background.tex);
+    }
+
+    void QuestionPanel::set_question(const QuestionData& _data)
+    {
+        data = _data;
+        
+        for (int i = 0; i < 4; i++)
+        {
+            buttons[i].text = data.options[i];
+        }
     }
 
     void QuestionPanel::flip()
@@ -179,9 +183,8 @@ namespace UI
             game->QueueTextEx(font, "Mission 1: ", text_pos, 20, spacing, color);
 
             Vector2 body_pos = {text_pos.x, text_pos.y + 36};
-            const std::string body = "The next scroll is hidden inside the Pharaoh`s chariot. Can you uncover How many spokes does each wheel have, and how does this design help?";
 
-            draw_boxed_text(game, font, body, body_pos,
+            draw_boxed_text(game, font, data.question, body_pos,
             16,
             {
                 body_pos.x, body_pos.y,
@@ -211,7 +214,7 @@ namespace UI
             button.text_color = WHITE;
         }
 
-        if (button->text == "Answer2")
+        if (button->text == p->data.answer)
         {
             std::cout << "Correct" << std::endl;
             button->text_color = GREEN;

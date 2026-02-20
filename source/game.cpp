@@ -1,5 +1,6 @@
 #include "game.h"
 #include "gameplay_systems.h"
+#include "question.h"
 
 #include "map_format.h"
 
@@ -100,6 +101,13 @@ void Game::init()
     panel_rect.x = (float)(draw_buf.w / 2) - panel_rect.width / 2;
     panel_rect.y = (float)(draw_buf.h / 2) - panel_rect.height / 2;
     question_panel.set_rect(panel_rect);
+
+    QuestionData question;
+    question.question = "The next scroll is hidden inside the Pharaoh`s chariot. Can you uncover How many spokes does each wheel have, and how does this design help?";
+    question.options = {"Pushing", "Balancing", "Pulling"};
+    question.answer = "Pulling";
+
+    question_panel.set_question(question);
 
     font = LoadFontEx(ASSETS_PATH"AtkinsonHyperlegible-Regular.ttf", 64, NULL, 0);
     if (!IsFontValid(font)) 
