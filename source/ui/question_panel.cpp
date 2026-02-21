@@ -49,20 +49,33 @@ static void draw_boxed_text(Game* game, const Font& font, const std::string& tex
     }
 }
 
-
 namespace UI
 {
     QuestionPanel::QuestionPanel()
     {
-        // TODO(): A default background
-        for (Button& button : buttons)
+        for (Button& button : option_buttons)
         {
-            button.on_press = on_button_press;
+            button.on_press = on_option_button_press;
             button.parent = this;
         }
 
+        next_question_button.text = "Next";
+        next_question_button.parent = this;
+        next_question_button.on_press = on_next_button_press;
+
         timer.on_timeout = on_timer_timeout;
         timer.parent = this;
+    }
+
+    void QuestionPanel::init_default(const Game& game)
+    {
+        // TODO(): A default background
+        for (Button& button : option_buttons)
+        {
+            button.set_texture(game.asset_m.get_asset<Texture>(ASSETS_PATH"wood.jpg"));
+        }
+
+        next_question_button.set_texture(game.asset_m.get_asset<Texture>(ASSETS_PATH"wood.jpg"));
     }
 
     void QuestionPanel::set_scale(float scale)
@@ -84,19 +97,75 @@ namespace UI
         assert(background.tex);
     }
 
-    void QuestionPanel::set_question(const QuestionData& _data)
+    void QuestionPanel::set_question(QuestionData* _data)
     {
+        assert(_data);
         data = _data;
         
-        for (int i = 0; i < data.option_count; i++)
+        for (int i = 0; i < data->option_count; i++)
         {
-            buttons[i].text = data.options[i];
+            option_buttons[i].text = data->options[i];
+            option_buttons[i].outline = true;
         }
 
-        for (int i = data.option_count; i < QUESTION_MAX_OPTIONS; i++)
+        for (int i = data->option_count; i < QUESTION_MAX_OPTIONS; i++)
         {
-            buttons[i].visible = false;
+            option_buttons[i].visible = false;
         }
+
+        update_layout();
+        _current_question_answered = false;
+    }
+
+    void QuestionPanel::set_state(State new_state)
+    {
+        timer.stop();
+        switch (new_state)
+        {
+            case State::SHOW_NOTHING:
+            {
+                for (Button& button : option_buttons)
+                {
+                    button.visible = false;
+                }
+                next_question_button.visible = false;
+            } break;
+
+            case State::SHOW_FEEDBACK:
+            {
+                for (Button& button : option_buttons)
+                {
+                    button.visible = false;
+                    button.text_color = WHITE;
+                }
+                next_question_button.visible = true; 
+            } break;
+
+            case State::SHOW_QUESTION:
+            {
+                update_layout();
+                next_question_button.visible = false;
+
+                if (data)
+                {
+                    for (int i = 0; i < data->option_count; i++)
+                    {
+                        option_buttons[i].visible = true;
+                    }
+                }
+            } break;
+
+            case State::SHOW_FINISHED:
+            {
+                next_question_button.visible = false;
+                for (Button& button : option_buttons)
+                {
+                    button.visible = false;
+                }
+            } break;
+        }
+
+        state = new_state;
     }
 
     void QuestionPanel::flip()
@@ -108,31 +177,33 @@ namespace UI
 
     void QuestionPanel::update(Game* game) 
     {
-        if (!visible)
-        {
-            background.visible = false;
-        }
+        background.visible = visible;
+        if (!visible) return;
 
         timer.update();
-
-        background.visible = true;
         background.update(game);
-
-        static PopupImageState prev_state = background.state;
-        if ((background.state == PopupImageState::Shown) && (prev_state != background.state))
+        for (Button& button : option_buttons)
         {
-            set_buttons_layout();
-        }
-        prev_state = background.state;
-
-        for (int i = 0; i < data.option_count; i++)
-        {
-            Button& button = buttons[i];
-            button.visible = background.state == PopupImageState::Shown;
             button.update(game);
+        }
+        next_question_button.update(game);
 
-            button.set_texture(game->asset_m.get_asset<Texture>(ASSETS_PATH"wood.jpg"));
-            button.outline = true;
+        if (background.state != PopupImageState::Shown)
+        {
+            set_state(State::SHOW_NOTHING);
+        }
+        else
+        {
+            if ((data == nullptr) && (!questions.empty()))
+            {
+                set_question(questions.data());
+                set_state(State::SHOW_QUESTION);
+            }
+
+            if ((current_question_index >= (questions.size() - 1)) && state != State::SHOW_QUESTION)
+            {
+                set_state(State::SHOW_FINISHED);
+            }
         }
     }
 
@@ -142,128 +213,172 @@ namespace UI
 
         background.draw(game, font);
 
-        for (const Button& button : buttons)
+        for (const Button& button : option_buttons)
         {
             button.draw(game, font);
         }
 
-        if (background.state == PopupImageState::Shown)
+        next_question_button.draw(game, font);
+
+        Rectangle rect = background.rect;
+        const int header_sz = 20;
+        const int body_sz = 16;
+        const float text_spacing = 1;
+        Vector2 header_pos = {rect.x + 4, rect.y + 4};
+        Vector2 body_pos = {header_pos.x, header_pos.y + header_sz * 2};
+        Color color;
+        color.r = 0x12;
+        color.g = 0x11;
+        color.b = 0x0f;
+        color.a = 0xff;
+
+        switch (state)
         {
-            Rectangle rect = background.rect;
-            Color color;
-            color.r = 0x12;
-            color.g = 0x11;
-            color.b = 0x0f;
-            color.a = 0xff;
-
-            const float spacing = 1;
-
-            Vector2 text_pos = {rect.x + 4, rect.y + 4};
-
-            game->QueueTextEx(font, "Mission 1: ", text_pos, 20, spacing, color);
-
-            Vector2 body_pos = {text_pos.x, text_pos.y + 36};
-
-            draw_boxed_text(game, font, data.question, body_pos,
-            16,
+            case State::SHOW_QUESTION:
             {
-                body_pos.x, body_pos.y,
-                rect.width, rect.height
-            },
-            spacing, color);
+                game->QueueTextEx(font, "Mission: ", header_pos, header_sz, text_spacing, color);
+
+                if (data)
+                {
+                    draw_boxed_text(game, font, data->question, body_pos,
+                    body_sz,
+                    {
+                        body_pos.x, body_pos.y,
+                        rect.width, rect.height
+                    },
+                    text_spacing, color);
+                }
+            } break;
+
+            case State::SHOW_FEEDBACK:
+            {
+                game->QueueTextEx(font, "Well done!", header_pos, header_sz, text_spacing, color);
+
+                if (data)
+                {
+                    draw_boxed_text(game, font, data->feedback, body_pos,
+                    body_sz,
+                    {
+                        body_pos.x, body_pos.y,
+                        rect.width, rect.height
+                    },
+                    text_spacing, color);
+                }
+            } break;
+
+            case State::SHOW_FINISHED:
+            {
+                game->QueueTextEx(font, "Nice job!", header_pos, header_sz, text_spacing, color);
+                draw_boxed_text(game, font, "You just finished all the missions!", body_pos,
+                body_sz,
+                {
+                    body_pos.x, body_pos.y,
+                    rect.width, rect.height
+                },
+                text_spacing, color);
+            } break;
         }
     }
 
-    void QuestionPanel::set_buttons_layout()
+    void QuestionPanel::update_layout()
     {
+        next_question_button.rect.width = 80;
+        next_question_button.rect.height = 30;
+        next_question_button.rect.x = background.rect.x + background.rect.width - next_question_button.rect.width;
+        next_question_button.rect.y = background.rect.y + background.rect.height - next_question_button.rect.height;
+
         option_rect.width = background.rect.width;
         option_rect.height = background.rect.height / 2.5f;
         option_rect.x = background.rect.x;
         option_rect.y = background.rect.y + (background.rect.height - option_rect.height);
 
         const int button_margin = 0;
-        switch (data.option_count)
+
+        if (data)
         {
-            case 4:
+            switch (data->option_count)
             {
-                float button_w = option_rect.width / 2;
-                float button_h = option_rect.height / 2;
-                buttons[0].rect = {
-                    option_rect.x + button_margin, option_rect.y + button_margin,
-                    button_w, button_h
-                };
+                case 4:
+                {
+                    float button_w = option_rect.width / 2;
+                    float button_h = option_rect.height / 2;
+                    option_buttons[0].rect = {
+                        option_rect.x + button_margin, option_rect.y + button_margin,
+                        button_w, button_h
+                    };
 
-                buttons[1].rect = {
-                    option_rect.x + button_margin, option_rect.y + option_rect.height - button_h - button_margin,
-                    button_w, button_h
-                };
+                    option_buttons[1].rect = {
+                        option_rect.x + button_margin, option_rect.y + option_rect.height - button_h - button_margin,
+                        button_w, button_h
+                    };
 
-                buttons[2].rect = {
-                    option_rect.x + option_rect.width - button_w - button_margin,
-                    option_rect.y + button_margin,
-                    button_w, button_h
-                };
+                    option_buttons[2].rect = {
+                        option_rect.x + option_rect.width - button_w - button_margin,
+                        option_rect.y + button_margin,
+                        button_w, button_h
+                    };
 
-                buttons[3].rect = {
-                    option_rect.x + option_rect.width - button_w - button_margin,
-                    option_rect.y + option_rect.height - button_h - button_margin,
-                    button_w, button_h
-                };
-            } break;
+                    option_buttons[3].rect = {
+                        option_rect.x + option_rect.width - button_w - button_margin,
+                        option_rect.y + option_rect.height - button_h - button_margin,
+                        button_w, button_h
+                    };
+                } break;
 
-            case 3:
-            {
-                float button_w = option_rect.width / 2;
-                float button_h = option_rect.height / 2;
-                buttons[0].rect = {
-                    option_rect.x + button_margin, option_rect.y + button_margin,
-                    button_w, button_h
-                };
+                case 3:
+                {
+                    float button_w = option_rect.width / 2;
+                    float button_h = option_rect.height / 2;
+                    option_buttons[0].rect = {
+                        option_rect.x + button_margin, option_rect.y + button_margin,
+                        button_w, button_h
+                    };
 
-                buttons[1].rect = {
-                    option_rect.x + option_rect.width - button_w - button_margin,
-                    option_rect.y + button_margin,
-                    button_w, button_h
-                };
+                    option_buttons[1].rect = {
+                        option_rect.x + option_rect.width - button_w - button_margin,
+                        option_rect.y + button_margin,
+                        button_w, button_h
+                    };
 
-                button_w = option_rect.width;
-                buttons[2].rect = {
-                    option_rect.x + button_margin,
-                    option_rect.y + button_h + button_margin,
-                    button_w, button_h
-                };
-            } break;
+                    button_w = option_rect.width;
+                    option_buttons[2].rect = {
+                        option_rect.x + button_margin,
+                        option_rect.y + button_h + button_margin,
+                        button_w, button_h
+                    };
+                } break;
+            }
         }
     }
 
-    void QuestionPanel::on_button_press(void *panel, Button *button)
+    void QuestionPanel::on_option_button_press(void *panel, Button *button)
     {
-        if (!panel)
-        {
-            return;
-        }
-        if (!button)
-        {
-            return;
-        }
-
-        // reset other buttons color changes
-
+        assert(panel);
+        assert(button);
         QuestionPanel* p = (QuestionPanel*)panel;
 
-        for (Button& button : p->buttons)
+        // reset other option_buttons color changes
+        for (Button& button : p->option_buttons)
         {
             button.text_color = WHITE;
         }
 
-        if (button->text == p->data.answer)
+        if (button->text == p->data->answer)
         {
             std::cout << "Correct" << std::endl;
+
             button->text_color = GREEN;
+            p->_current_question_answered = true;
+
+/*            if (p->current_question_index < (p->questions.size()-1))
+            {
+                p->set_state(State::SHOW_FEEDBACK);
+            }*/
         }
         else
         {
             std::cout << "Incorrect" << std::endl;
+
             button->text_color = RED;
         }
 
@@ -271,13 +386,45 @@ namespace UI
         p->timer.user_data = button;
     }
 
-    void QuestionPanel::on_timer_timeout(void *panel, void* user_data)
+    void QuestionPanel::on_next_button_press(void *panel, Button *button)
     {
-        if (!panel) return;
-        if (!user_data) return;
+        assert(panel);
+        assert(button);
+
+        QuestionPanel* p = (QuestionPanel*)panel;
+        p->current_question_index++;
+        if (p->questions.size() > p->current_question_index)
+        {
+            p->set_question(p->questions.data() + p->current_question_index);
+            p->set_state(State::SHOW_QUESTION);
+
+            printf("Advanced to question %d\n", p->current_question_index);
+        }
+        else
+        {
+            printf("Questions are done\n");
+        }
+    }
+
+    void QuestionPanel::on_timer_timeout(void *panel, void *user_data)
+    {
+        assert(panel);
+        assert(user_data);
 
         QuestionPanel* p = (QuestionPanel*)panel;
         Button* button = (Button*)user_data;
         button->text_color = WHITE;
+
+        if (p->_current_question_answered)
+        {
+            if (p->current_question_index >= (p->questions.size() - 1))
+            {
+                p->set_state(State::SHOW_FINISHED);
+            }
+            else
+            {
+                p->set_state(State::SHOW_FEEDBACK);
+            }
+        }
     }
 }

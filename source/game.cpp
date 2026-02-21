@@ -107,8 +107,12 @@ void Game::init()
     question.options = {"Pushing", "Balancing", "Pulling"};
     question.option_count = 3;
     question.answer = "Pulling";
+    question.feedback = "Brilliant! You`ve restored the weight of wisdom. 91 grams of pure genius! The next secret beats within the heart. seek the healers of Beliefs.";
 
-    question_panel.set_question(question);
+    question_panel.questions.push_back(question);
+    question_panel.questions.push_back(question);
+
+    question_panel.init_default(*this);
 
     font = LoadFontEx(ASSETS_PATH"AtkinsonHyperlegible-Regular.ttf", 64, NULL, 0);
     if (!IsFontValid(font)) 

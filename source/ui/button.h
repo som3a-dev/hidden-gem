@@ -24,6 +24,7 @@ namespace UI
 
         bool outline = false;
 
+        Color bg_color = BLACK;
         Color text_color = WHITE;
 
         void (*on_press)(void* parent, Button* button) = nullptr;

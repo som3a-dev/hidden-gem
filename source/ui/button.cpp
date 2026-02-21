@@ -65,6 +65,10 @@ namespace UI
             (float)(texture->width), (float)(texture->height)},
             rect, {0, 0}, 0, color);
         }
+        else
+        {
+            DrawRectanglePro(rect, {0, 0}, 0, color);
+        }
 
         if (outline)
         {

@@ -96,4 +96,6 @@ private:
 #endif
 
 
-//NEXT: Mission answering, UI, Game Menu, Game intro, Camera, Sound, Mission progress, Web/Android build
+// NEXT(): UI, Game Menu, Game intro, Camera, Sound, Mission progress, Web/Android build
+
+// next(): small popup box for hints, confirmation (with yes or no) and other stuff, timer for questions
