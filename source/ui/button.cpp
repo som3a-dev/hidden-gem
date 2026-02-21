@@ -43,7 +43,10 @@ namespace UI
 
     void Button::draw(Game* game, const Font& font) const
     {
-        if (!visible) return;
+        if (!visible)
+        {
+            return;
+        }
 
         Color color = {255, 255, 255, 170};
 

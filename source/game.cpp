@@ -105,6 +105,7 @@ void Game::init()
     QuestionData question;
     question.question = "The next scroll is hidden inside the Pharaoh`s chariot. Can you uncover How many spokes does each wheel have, and how does this design help?";
     question.options = {"Pushing", "Balancing", "Pulling"};
+    question.option_count = 3;
     question.answer = "Pulling";
 
     question_panel.set_question(question);

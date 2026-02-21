@@ -88,9 +88,14 @@ namespace UI
     {
         data = _data;
         
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < data.option_count; i++)
         {
             buttons[i].text = data.options[i];
+        }
+
+        for (int i = data.option_count; i < QUESTION_MAX_OPTIONS; i++)
+        {
+            buttons[i].visible = false;
         }
     }
 
@@ -113,41 +118,16 @@ namespace UI
         background.visible = true;
         background.update(game);
 
-        if (background.state == PopupImageState::Shown)
+        static PopupImageState prev_state = background.state;
+        if ((background.state == PopupImageState::Shown) && (prev_state != background.state))
         {
-            option_rect.width = background.rect.width;
-            option_rect.height = background.rect.height / 2.5f;
-            option_rect.x = background.rect.x;
-            option_rect.y = background.rect.y + (background.rect.height - option_rect.height);
-
-            float button_w = option_rect.width / 2;
-            float button_h = option_rect.height / 2;
-            const int button_margin = 0;
-            buttons[0].rect = {
-                option_rect.x + button_margin, option_rect.y + button_margin,
-                button_w, button_h
-            };
-
-            buttons[1].rect = {
-                option_rect.x + button_margin, option_rect.y + option_rect.height - button_h - button_margin,
-                button_w, button_h
-            };
-
-            buttons[2].rect = {
-                option_rect.x + option_rect.width - button_w - button_margin,
-                option_rect.y + button_margin,
-                button_w, button_h
-            };
-
-            buttons[3].rect = {
-                option_rect.x + option_rect.width - button_w - button_margin,
-                option_rect.y + option_rect.height - button_h - button_margin,
-                button_w, button_h
-            };
+            set_buttons_layout();
         }
+        prev_state = background.state;
 
-        for (Button& button : buttons)
+        for (int i = 0; i < data.option_count; i++)
         {
+            Button& button = buttons[i];
             button.visible = background.state == PopupImageState::Shown;
             button.update(game);
 
@@ -194,7 +174,69 @@ namespace UI
         }
     }
 
-    void QuestionPanel::on_button_press(void* panel, Button* button)
+    void QuestionPanel::set_buttons_layout()
+    {
+        option_rect.width = background.rect.width;
+        option_rect.height = background.rect.height / 2.5f;
+        option_rect.x = background.rect.x;
+        option_rect.y = background.rect.y + (background.rect.height - option_rect.height);
+
+        const int button_margin = 0;
+        switch (data.option_count)
+        {
+            case 4:
+            {
+                float button_w = option_rect.width / 2;
+                float button_h = option_rect.height / 2;
+                buttons[0].rect = {
+                    option_rect.x + button_margin, option_rect.y + button_margin,
+                    button_w, button_h
+                };
+
+                buttons[1].rect = {
+                    option_rect.x + button_margin, option_rect.y + option_rect.height - button_h - button_margin,
+                    button_w, button_h
+                };
+
+                buttons[2].rect = {
+                    option_rect.x + option_rect.width - button_w - button_margin,
+                    option_rect.y + button_margin,
+                    button_w, button_h
+                };
+
+                buttons[3].rect = {
+                    option_rect.x + option_rect.width - button_w - button_margin,
+                    option_rect.y + option_rect.height - button_h - button_margin,
+                    button_w, button_h
+                };
+            } break;
+
+            case 3:
+            {
+                float button_w = option_rect.width / 2;
+                float button_h = option_rect.height / 2;
+                buttons[0].rect = {
+                    option_rect.x + button_margin, option_rect.y + button_margin,
+                    button_w, button_h
+                };
+
+                buttons[1].rect = {
+                    option_rect.x + option_rect.width - button_w - button_margin,
+                    option_rect.y + button_margin,
+                    button_w, button_h
+                };
+
+                button_w = option_rect.width;
+                buttons[2].rect = {
+                    option_rect.x + button_margin,
+                    option_rect.y + button_h + button_margin,
+                    button_w, button_h
+                };
+            } break;
+        }
+    }
+
+    void QuestionPanel::on_button_press(void *panel, Button *button)
     {
         if (!panel)
         {
