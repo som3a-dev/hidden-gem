@@ -119,6 +119,11 @@ namespace UI
 
     void QuestionPanel::set_state(State new_state)
     {
+        if (state == new_state)
+        {
+            return;
+        }
+
         timer.stop();
         switch (new_state)
         {
@@ -165,6 +170,7 @@ namespace UI
             } break;
         }
 
+        prev_state = state;
         state = new_state;
     }
 
@@ -188,6 +194,7 @@ namespace UI
         }
         next_question_button.update(game);
 
+        printf("%d\n", state);
         if (background.state != PopupImageState::Shown)
         {
             set_state(State::SHOW_NOTHING);
@@ -199,10 +206,14 @@ namespace UI
                 set_question(questions.data());
                 set_state(State::SHOW_QUESTION);
             }
-
-            if ((current_question_index >= (questions.size() - 1)) && state != State::SHOW_QUESTION)
+            else if ((current_question_index >= (questions.size() - 1)) && state != State::SHOW_QUESTION)
             {
                 set_state(State::SHOW_FINISHED);
+            }
+            else if (state == State::SHOW_NOTHING)
+            {
+                // Panel was closed then opened again, go back to the last state
+                set_state(prev_state);
             }
         }
     }
