@@ -2,7 +2,7 @@
 #define _QUESTION_PANEL_H
 
 #include "asset_manager.h"
-#include "popup_image.h"
+#include "popup_box.h"
 #include "button.h"
 #include "timer.h"
 #include "question.h"
@@ -45,7 +45,7 @@ namespace UI
         bool _current_question_answered = false;
 
     private:
-        PopupImage background;
+        PopupBox background;
         Timer timer;
 
         State state = State::SHOW_NOTHING;

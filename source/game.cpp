@@ -114,6 +114,15 @@ void Game::init()
 
     question_panel.init_default(*this);
 
+    popup.visible = true;
+    popup.bg_color = BLUE;
+    popup.text_color = YELLOW;
+    popup.center_x = draw_buf.w / 2;
+    popup.center_y = draw_buf.h / 2 - 50;
+
+    popup.w = 150;
+    popup.h = 150;
+
     font = LoadFontEx(ASSETS_PATH"AtkinsonHyperlegible-Regular.ttf", 64, NULL, 0);
     if (!IsFontValid(font)) 
     {
@@ -239,6 +248,11 @@ void Game::update()
         torch_light.height -= 5;
     }
 
+    if (IsKeyPressed(KEY_Z))
+    {
+        popup.flip();
+    }
+
     if (torch_light.radius < 0)
     {
         torch_light.radius = 0;
@@ -260,6 +274,7 @@ void Game::update()
 
     box.update(); 
     question_panel.update(this);
+    popup.update(this);
 }
 
 void Game::draw()
@@ -358,6 +373,7 @@ void Game::draw()
 
     box.draw();
     question_panel.draw(this, font);
+    popup.draw(this, font);
 
 //    QueueTextEx(font, "Whereas recognition of the inherent dignity", {20, 20}, 16, 2, WHITE);
 

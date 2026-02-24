@@ -3,51 +3,7 @@
 
 #include <assert.h>
 #include <iostream>
-
-static void draw_boxed_text(Game* game, const Font& font, const std::string& text, Vector2 text_pos, int textsz, Rectangle box, float spacing, Color color)
-{
-    int words_count;
-    char** words = TextSplit(text.c_str(), ' ', &words_count);
-
-    float char_x = text_pos.x;
-    float char_y = text_pos.y;
-    for (int i = 0; i < words_count; i++)
-    {
-        const char* word = words[i];
-        Vector2 word_sz = MeasureTextEx(font, word, (float)textsz, spacing);
-
-        if ((char_x + word_sz.x) >= (box.x + box.width))
-        {
-            char_x = text_pos.x;
-            char_y += word_sz.y;
-        }
-
-        if ((char_y + word_sz.y) >= (box.y + box.height))
-        {
-
-        }
-
-        for (int j = 0; j < strlen(word); j++)
-        {
-//            DrawTextCodepoint(font, word[j], {char_x, char_y}, (float)textsz, color);
-            char chars[2] = {word[j], '\0'};
-            game->QueueTextEx(font, chars, {char_x, char_y}, (float)textsz, spacing, color);
-
-            Vector2 size = MeasureTextEx(font, chars, (float)textsz, 0);
-            char_x += size.x + spacing;
-
-            if ((char_x + size.x) >= (box.x + box.width))
-            {
-                char_x = text_pos.x;
-                char_y += size.y;
-            }
-        }
-
-        char chars[] = {' ', '\0'};
-        Vector2 size = MeasureTextEx(font, chars, (float)textsz, 0);
-        char_x += size.x;
-    }
-}
+#include <string>
 
 namespace UI
 {
@@ -69,13 +25,15 @@ namespace UI
 
     void QuestionPanel::init_default(const Game& game)
     {
-        // TODO(): A default background
         for (Button& button : option_buttons)
         {
             button.set_texture(game.asset_m.get_asset<Texture>(ASSETS_PATH"wood.jpg"));
         }
 
         next_question_button.set_texture(game.asset_m.get_asset<Texture>(ASSETS_PATH"wood.jpg"));
+
+        background.text_color = BLACK;
+        background.bg_color = WHITE;
     }
 
     void QuestionPanel::set_scale(float scale)
@@ -93,8 +51,7 @@ namespace UI
 
     void QuestionPanel::set_background(const AssetManager& asset_m, const std::string& texture_id)
     {
-        background.tex = asset_m.get_asset<Texture>(texture_id);
-        assert(background.tex);
+        background.bg_texture = asset_m.get_asset<Texture>(texture_id);
     }
 
     void QuestionPanel::set_question(QuestionData* _data)
@@ -144,15 +101,23 @@ namespace UI
                     button.text_color = WHITE;
                 }
                 next_question_button.visible = true; 
+
+                background.header = "Well done!";
+                if (data)
+                {
+                    background.body = data->feedback;
+                }
             } break;
 
             case State::SHOW_QUESTION:
             {
                 update_layout();
                 next_question_button.visible = false;
-
                 if (data)
                 {
+                    background.header = "Mission: ";
+                    background.body = data->question;
+
                     for (int i = 0; i < data->option_count; i++)
                     {
                         option_buttons[i].visible = true;
@@ -166,6 +131,12 @@ namespace UI
                 for (Button& button : option_buttons)
                 {
                     button.visible = false;
+                }
+
+                if (data)
+                {
+                    background.header = "Nice job!";
+                    background.body = "You just finished all the missions!";
                 }
             } break;
         }
@@ -188,14 +159,14 @@ namespace UI
 
         timer.update();
         background.update(game);
+
         for (Button& button : option_buttons)
         {
             button.update(game);
         }
         next_question_button.update(game);
 
-        printf("%d\n", state);
-        if (background.state != PopupImageState::Shown)
+        if (background.get_state() != PopupBoxState::Shown)
         {
             set_state(State::SHOW_NOTHING);
         }
@@ -230,78 +201,21 @@ namespace UI
         }
 
         next_question_button.draw(game, font);
-
-        Rectangle rect = background.rect;
-        const int header_sz = 20;
-        const int body_sz = 16;
-        const float text_spacing = 1;
-        Vector2 header_pos = {rect.x + 4, rect.y + 4};
-        Vector2 body_pos = {header_pos.x, header_pos.y + header_sz * 2};
-        Color color;
-        color.r = 0x12;
-        color.g = 0x11;
-        color.b = 0x0f;
-        color.a = 0xff;
-
-        switch (state)
-        {
-            case State::SHOW_QUESTION:
-            {
-                game->QueueTextEx(font, "Mission: ", header_pos, header_sz, text_spacing, color);
-
-                if (data)
-                {
-                    draw_boxed_text(game, font, data->question, body_pos,
-                    body_sz,
-                    {
-                        body_pos.x, body_pos.y,
-                        rect.width, rect.height
-                    },
-                    text_spacing, color);
-                }
-            } break;
-
-            case State::SHOW_FEEDBACK:
-            {
-                game->QueueTextEx(font, "Well done!", header_pos, header_sz, text_spacing, color);
-
-                if (data)
-                {
-                    draw_boxed_text(game, font, data->feedback, body_pos,
-                    body_sz,
-                    {
-                        body_pos.x, body_pos.y,
-                        rect.width, rect.height
-                    },
-                    text_spacing, color);
-                }
-            } break;
-
-            case State::SHOW_FINISHED:
-            {
-                game->QueueTextEx(font, "Nice job!", header_pos, header_sz, text_spacing, color);
-                draw_boxed_text(game, font, "You just finished all the missions!", body_pos,
-                body_sz,
-                {
-                    body_pos.x, body_pos.y,
-                    rect.width, rect.height
-                },
-                text_spacing, color);
-            } break;
-        }
     }
 
     void QuestionPanel::update_layout()
     {
+        Rectangle rect = background.get_rect();
+
         next_question_button.rect.width = 80;
         next_question_button.rect.height = 30;
-        next_question_button.rect.x = background.rect.x + background.rect.width - next_question_button.rect.width;
-        next_question_button.rect.y = background.rect.y + background.rect.height - next_question_button.rect.height;
+        next_question_button.rect.x = rect.x + rect.width - next_question_button.rect.width;
+        next_question_button.rect.y = rect.y + rect.height - next_question_button.rect.height;
 
-        option_rect.width = background.rect.width;
-        option_rect.height = background.rect.height / 2.5f;
-        option_rect.x = background.rect.x;
-        option_rect.y = background.rect.y + (background.rect.height - option_rect.height);
+        option_rect.width = rect.width;
+        option_rect.height = rect.height / 2.5f;
+        option_rect.x = rect.x;
+        option_rect.y = rect.y + (rect.height - option_rect.height);
 
         const int button_margin = 0;
 

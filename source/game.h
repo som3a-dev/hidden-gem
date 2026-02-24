@@ -10,7 +10,7 @@
 #include "game_draw_buffer.h"
 
 #include "ui/textbox.h"
-#include "ui/popup_image.h"
+#include "ui/popup_box.h"
 #include "ui/question_panel.h"
 
 #include <vector>
@@ -48,6 +48,7 @@ public:
 
     UI::Textbox box;
     UI::QuestionPanel question_panel;
+    UI::PopupBox popup;
 
     void init();
     void destroy();
