@@ -58,6 +58,7 @@ namespace UI
     {
         if (!visible)
         {
+            percent_visible = 0;
             return;
         }
 
@@ -80,6 +81,39 @@ namespace UI
                 {
                     anim_scale = 0;
                     state = PopupBoxState::Hidden;
+                }
+            } break;
+
+            case PopupBoxState::Shown:
+            {
+                if (percent_visible == 1)
+                {
+                    if (IsKeyPressed(KEY_ENTER))
+                    {
+                        percent_visible = 0;
+                    }
+                }
+
+                if (IsKeyPressed(KEY_M))
+                {
+                    percent_visible = 1;
+                }
+
+                sped_up = IsKeyDown(KEY_ENTER);
+                if (percent_visible < 1)
+                {
+                    int speed = chars_per_second;
+                    if (sped_up)
+                    {
+                        speed *= 2;
+                    }
+
+                    float show_speed = (float)(speed) / (float)(body.length());
+                    percent_visible += show_speed * GetFrameTime();
+                }
+                else if (percent_visible > 1)
+                {
+                    percent_visible = 1;
                 }
             } break;
 
@@ -142,7 +176,10 @@ namespace UI
 
             game->QueueTextEx(font, header.c_str(), header_pos, header_sz, text_spacing, text_color);
 
-            draw_boxed_text(game, font, body, body_pos, body_sz, {
+            float shown_body_len = body.length() * percent_visible;
+            std::string shown_body = body.substr(0, (size_t)shown_body_len);
+
+            draw_boxed_text(game, font, shown_body, body_pos, body_sz, {
                 body_pos.x, body_pos.y,
                 rect.width, rect.height
             },

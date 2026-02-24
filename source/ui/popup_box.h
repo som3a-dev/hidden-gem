@@ -39,6 +39,10 @@ namespace UI
         std::string header = "Header";
         std::string body = "Body";
 
+        float percent_visible = 0; // percentage of the body's text that is visible, from 0 to 1
+        int chars_per_second = 12; // how many characters are shown per second
+        bool sped_up = false; // if true, the body's text gets typed twice as fast as chars_per_second
+
         void update(Game* game);
         void draw(Game* game, const Font& font) const;
 
