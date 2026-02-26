@@ -62,6 +62,9 @@ public:
     void QueueText(const char* text, int x, int y, int fontsz, Color color);
     void QueueTextEx(Font _font, const char* text, Vector2 pos, float fontsz, float spacing, Color color);
 
+    // Callbacks
+    static void on_question_answered(Game* game);
+
 private:    
     struct TextDrawCall
     {
@@ -74,6 +77,8 @@ private:
     };
 
     std::vector<TextDrawCall> td_calls;
+
+    int missions_done = 0;
 
     void update();
     void draw();
@@ -97,6 +102,6 @@ private:
 #endif
 
 
-// NEXT(): UI, Game Menu, Game intro, Camera, Sound, Mission progress, Web/Android build
+// NEXT(): Game Menu, Game intro, Camera, Sound, Mission progress, Web/Android build
 
 // next(): small popup box for hints, confirmation (with yes or no) and other stuff, timer for questions

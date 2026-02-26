@@ -22,8 +22,6 @@ void Game::init()
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screen_width, screen_height, "Hidden GEM");
 
-//    ToggleFullscreen();
-
     screen_width = GetScreenWidth();
     screen_height = GetScreenHeight();
 
@@ -45,6 +43,7 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"1.png");
     asset_m.load_texture(ASSETS_PATH"win_wood.png");
     asset_m.load_texture(ASSETS_PATH"wood.jpg");
+    asset_m.load_texture(ASSETS_PATH"book.png");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);
@@ -87,13 +86,14 @@ void Game::init()
 
     box.text = "The stone corridor stretches farther than your light should allow, its walls damp and scarred by something that once tried to escape. Every step you take feels louder than the last, and for a brief moment, you are certain the darkness ahead breathes in response to you.";
     box.percent_visible = 0;
-//    box.visible = true;
     box.show_text = true;
     box.set_box(box_r);
 
     question_panel.set_background(asset_m, ASSETS_PATH"papyrus.jpg");
     question_panel.set_scale(0.8f);
     question_panel.visible = true;
+    question_panel.parent = this;
+    question_panel.on_question_answered = on_question_answered;
 
     Rectangle panel_rect;
     panel_rect.width = 400;
@@ -178,6 +178,11 @@ void Game::QueueTextEx(Font _font, const char *text, Vector2 pos, float fontsz, 
     td_calls.push_back(call);
 }
 
+void Game::on_question_answered(Game *game)
+{
+    game->missions_done++;
+}
+
 void Game::update()
 {
     if (WindowShouldClose())
@@ -189,7 +194,6 @@ void Game::update()
     {
         ToggleFullscreen();
     }
-//    if (IsWindowResized())
     {
         screen_width = GetScreenWidth();
         screen_height = GetScreenHeight();
@@ -374,6 +378,31 @@ void Game::draw()
     box.draw();
     question_panel.draw(this, font);
     popup.draw(this, font);
+
+    Texture* book_tex = asset_m.get_asset<Texture>(ASSETS_PATH"book.png");
+    if (book_tex)
+    {
+        DrawTexturePro(*book_tex, {
+            0, 0, (float)(book_tex->width), (float)(book_tex->height)
+        }, {
+            4, 6, 24, 24 
+        },
+        {0, 0}, 0, WHITE);
+
+        Rectangle book_rect = {
+            4, 6, 24, 20
+        };
+
+        Vector2 text_pos = {
+            book_rect.x + book_rect.width,
+            book_rect.y
+        };
+
+        static char buf[128];
+        snprintf(buf, sizeof(buf) / sizeof(char), " : %d", missions_done);
+
+        QueueTextEx(font, buf, text_pos, 22, 1.0f, WHITE);
+    }
 
 //    QueueTextEx(font, "Whereas recognition of the inherent dignity", {20, 20}, 16, 2, WHITE);
 

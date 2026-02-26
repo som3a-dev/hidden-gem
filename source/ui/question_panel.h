@@ -44,6 +44,9 @@ namespace UI
 
         bool _current_question_answered = false;
 
+        Game* parent = NULL;
+        void (*on_question_answered)(Game*);
+
     private:
         PopupBox background;
         Timer timer;

@@ -296,10 +296,10 @@ namespace UI
             button->text_color = GREEN;
             p->_current_question_answered = true;
 
-/*            if (p->current_question_index < (p->questions.size()-1))
+            if ((p->parent) && (p->on_question_answered))
             {
-                p->set_state(State::SHOW_FEEDBACK);
-            }*/
+                p->on_question_answered(p->parent);
+            }
         }
         else
         {
