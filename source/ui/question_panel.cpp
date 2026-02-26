@@ -35,6 +35,7 @@ namespace UI
         background.text_color = BLACK;
         background.bg_color = WHITE;
         background.percent_visible = 1;
+        background.animate_typing = false;
     }
 
     void QuestionPanel::set_scale(float scale)

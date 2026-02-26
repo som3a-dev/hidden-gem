@@ -54,16 +54,45 @@ static void draw_boxed_text(Game* game, const Font& font, const std::string& tex
 
 namespace UI
 {
+    PopupBox::PopupBox()
+    {
+        yes_button.text = "Yes";
+        no_button.text = "No";
+        
+        no_button.parent = this;
+        yes_button.parent = this;
+        no_button.on_press = on_no_press;
+        yes_button.on_press = on_yes_press;
+    }
+
     void PopupBox::update(Game* game)
     {
         if (!visible)
         {
-            percent_visible = 0;
             return;
+        }
+
+        if (state == PopupBoxState::Shown && (confirm_box))
+        {
+            yes_button.visible = true;
+            no_button.visible = true;    
+        }
+        else
+        {
+            yes_button.visible = false;
+            no_button.visible = false;
         }
 
         switch (state)
         {
+            case PopupBoxState::Hidden:
+            {
+                if (animate_typing)
+                {
+                    percent_visible = 0;
+                }
+            } break;
+
             case PopupBoxState::Popup:
             {
                 anim_scale += popup_speed * game->dt;
@@ -86,32 +115,39 @@ namespace UI
 
             case PopupBoxState::Shown:
             {
-                if (percent_visible == 1)
+                if (animate_typing)
                 {
-                    if (IsKeyPressed(KEY_ENTER))
+                    if (percent_visible == 1)
                     {
-                        percent_visible = 0;
-                    }
-                }
-
-                if (IsKeyPressed(KEY_M))
-                {
-                    percent_visible = 1;
-                }
-
-                sped_up = IsKeyDown(KEY_ENTER);
-                if (percent_visible < 1)
-                {
-                    int speed = chars_per_second;
-                    if (sped_up)
-                    {
-                        speed *= 2;
+                        if (IsKeyPressed(KEY_ENTER))
+                        {
+                            percent_visible = 0;
+                        }
                     }
 
-                    float show_speed = (float)(speed) / (float)(body.length());
-                    percent_visible += show_speed * GetFrameTime();
+                    if (IsKeyPressed(KEY_M))
+                    {
+                        percent_visible = 1;
+                    }
+
+                    sped_up = IsKeyDown(KEY_ENTER);
+                    if (percent_visible < 1)
+                    {
+                        int speed = chars_per_second;
+                        if (sped_up)
+                        {
+                            speed *= 2;
+                        }
+
+                        float show_speed = (float)(speed) / (float)(body.length());
+                        percent_visible += show_speed * GetFrameTime();
+                    }
+                    else if (percent_visible > 1)
+                    {
+                        percent_visible = 1;
+                    }
                 }
-                else if (percent_visible > 1)
+                else
                 {
                     percent_visible = 1;
                 }
@@ -139,18 +175,24 @@ namespace UI
 
         rect.x = (float)(center_x) - rect.width / 2;
         rect.y = (float)(center_y) - rect.height / 2;
+
+        no_button.rect.width = 48;
+        no_button.rect.height = 24;
+        no_button.rect.x = rect.x + rect.width - yes_button.rect.width;
+        no_button.rect.y = rect.y + rect.height - yes_button.rect.height;
+
+        yes_button.rect = no_button.rect;
+        yes_button.rect.x -= yes_button.rect.width + 2;
+
+        yes_button.update(game);
+        no_button.update(game);
     }
 
     void PopupBox::draw(Game* game, const Font& font) const
     {
         assert(game);
 
-        if (!visible)
-        {
-            return;
-        }
-
-        if (state == PopupBoxState::Hidden)
+        if (!visible || (state == PopupBoxState::Hidden))
         {
             return;
         }
@@ -185,6 +227,9 @@ namespace UI
             },
             text_spacing, text_color);
         }
+
+        yes_button.draw(game, font);
+        no_button.draw(game, font);
     }
 
     void PopupBox::flip()
@@ -206,5 +251,15 @@ namespace UI
 
             } break;
         }
+    }
+
+    void PopupBox::on_yes_press(void *p, Button *button)
+    {
+        printf("Yes\n");
+    }
+
+    void PopupBox::on_no_press(void *p, Button *button)
+    {
+        printf("No\n");
     }
 }

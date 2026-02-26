@@ -115,6 +115,7 @@ void Game::init()
     question_panel.init_default(*this);
 
     popup.visible = true;
+    popup.confirm_box = true;
     popup.bg_color = BLUE;
     popup.text_color = YELLOW;
     popup.center_x = draw_buf.w / 2;
