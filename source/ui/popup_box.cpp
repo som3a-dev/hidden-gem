@@ -117,35 +117,7 @@ namespace UI
             {
                 if (animate_typing)
                 {
-                    if (percent_visible == 1)
-                    {
-                        if (IsKeyPressed(KEY_ENTER))
-                        {
-                            percent_visible = 0;
-                        }
-                    }
-
-                    if (IsKeyPressed(KEY_M))
-                    {
-                        percent_visible = 1;
-                    }
-
-                    sped_up = IsKeyDown(KEY_ENTER);
-                    if (percent_visible < 1)
-                    {
-                        int speed = chars_per_second;
-                        if (sped_up)
-                        {
-                            speed *= 2;
-                        }
-
-                        float show_speed = (float)(speed) / (float)(body.length());
-                        percent_visible += show_speed * GetFrameTime();
-                    }
-                    else if (percent_visible > 1)
-                    {
-                        percent_visible = 1;
-                    }
+                    type_text();
                 }
                 else
                 {
@@ -261,5 +233,38 @@ namespace UI
     void PopupBox::on_no_press(void *p, Button *button)
     {
         printf("No\n");
+    }
+
+    void PopupBox::type_text()
+    {
+        if (percent_visible == 1)
+        {
+            if (IsKeyPressed(KEY_ENTER))
+            {
+                percent_visible = 0;
+            }
+        }
+
+        if (IsKeyPressed(KEY_M))
+        {
+            percent_visible = 1;
+        }
+
+        sped_up = IsKeyDown(KEY_ENTER);
+        if (percent_visible < 1)
+        {
+            int speed = chars_per_second;
+            if (sped_up)
+            {
+                speed *= 2;
+            }
+
+            float show_speed = (float)(speed) / (float)(body.length());
+            percent_visible += show_speed * GetFrameTime();
+        }
+        else if (percent_visible > 1)
+        {
+            percent_visible = 1;
+        }
     }
 }

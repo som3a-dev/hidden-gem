@@ -79,6 +79,8 @@ namespace UI
 
         // the rect of the image this frame, origin top left
         Rectangle rect = {0};
+
+        void type_text();
     };
 }
 
