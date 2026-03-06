@@ -21,7 +21,7 @@ struct LightSource
     /*
         shader_index : the index of the Light to set in the Light array in the shader
     */
-    void set_uniforms(Shader& lighting_shader, int shader_index) const;
+    void set_uniforms(Shader& lighting_shader, int shader_index, Vector2 camera) const;
 };
 
 #endif

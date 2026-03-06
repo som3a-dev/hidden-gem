@@ -13,7 +13,6 @@ struct Light
     vec3 color;
 };
 
-
 #define MAX_LIGHTS 10
 // If this array's size is updated, it must be updated in the game code too (LightSource)
 uniform Light light[MAX_LIGHTS];

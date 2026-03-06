@@ -5,7 +5,7 @@
 
 static const int light_count = 10;
 
-void LightSource::set_uniforms(Shader& lighting_shader, int shader_index) const
+void LightSource::set_uniforms(Shader& lighting_shader, int shader_index, Vector2 camera) const
 {
     if ((shader_index < 0) || (shader_index >= light_count))
     {
@@ -13,7 +13,7 @@ void LightSource::set_uniforms(Shader& lighting_shader, int shader_index) const
         return;
     }
 
-    Vector2 pos = {x, y};
+    Vector2 pos = {x - camera.x, y - camera.y};
     char buf[64];
     size_t bufsz = sizeof(buf) / sizeof(char);
 

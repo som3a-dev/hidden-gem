@@ -83,8 +83,8 @@ void Game::create_torch(float x, float y)
     world.drawables.add_component(entity, std::move(drawable));
     world.animated_drawables.add_component(entity, std::move(animated_drawable));
 
-    torch_pos.x = transform.x + 24;
-    torch_pos.y = transform.y + 12;
+    torch_light.x = transform.x + 24;
+    torch_light.y = transform.y + 12;
 }
 
 void Game::create_table(float x, float y)
@@ -100,4 +100,22 @@ void Game::create_table(float x, float y)
     world.transforms.add_component(entity, std::move(transform));
     world.drawables.add_component(entity, std::move(drawable));
     world.interactables.add_component(entity, std::move(interactable));
+}
+
+void Game::create_window(float x, float y) 
+{
+    ECS::TransformComponent transform;
+    transform.x = x;
+    transform.y = y;
+
+    window_light.x = x;
+    window_light.y = y;
+
+    ECS::DrawableComponent drawable;
+    drawable.scale = 0.5f;
+    drawable.texture_path = ASSETS_PATH"win_wood.png";
+
+    int entity = world.create_entity();
+    world.transforms.add_component(entity, std::move(transform));
+    world.drawables.add_component(entity, std::move(drawable));
 }

@@ -57,10 +57,6 @@ public:
 
     FollowCamera camera;
 
-    // Positions in world space, the LightSources have the screen space position
-    Vector2 torch_pos;
-    Vector2 window_pos;
-
     LightSource torch_light;
     LightSource window_light;
     float ambient_attenuation;
@@ -101,8 +97,12 @@ public:
     void create_torch(float x, float y);
     void create_table(float x, float y);
 
+    void create_window(float x, float y);
+
     void load_tilemap(const std::string& filepath);
     void load_tileset(const std::string& filepath);
+
+    void load_castle();
 
     private:
     struct TextDrawCall

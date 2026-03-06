@@ -58,27 +58,11 @@ void Game::init()
 
     load_tileset(ASSETS_PATH"tileset.json");
     tilemap.create(screen_width / tile_width * 2, screen_height / tile_height * 2);
-    load_tilemap(ASSETS_PATH"map.hgm");
-
-    create_torch(520, 270);
-    create_table(450, 293);
-    create_player(300, 180);
+    load_castle();
 
 //    ToggleFullscreen();
 
     shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
-
-    torch_light.radius = 200;
-    torch_light.color = {1.0f, 0.9f, 0.6f};
-    torch_light.height = 70.0f;
-
-    window_light.radius = 200;
-    window_light.height = 200.0f;
-    window_light.color = {172.0f / 255, 172.0f / 255, 193.0f / 255};
-    window_pos.x = 190;
-    window_pos.y = 180 + 50;
-
-    ambient_attenuation = 0.05f;
 
     const int box_w = draw_buf.w;
     const int box_h = 24;
@@ -251,9 +235,6 @@ void Game::update()
     box.update(); 
     question_panel.update(this);
     popup.update(this);
-
-    torch_light.x = torch_pos.x - camera.x;
-    torch_light.y = torch_pos.y - camera.y;
 }
 
 void Game::update_shaders()
@@ -268,8 +249,8 @@ void Game::update_shaders()
     int ambient_uniform = GetShaderLocation(shader, "ambientAtt");
     SetShaderValue(shader, ambient_uniform, &ambient_attenuation, SHADER_UNIFORM_FLOAT);
 
-    torch_light.set_uniforms(shader, 0);
-    window_light.set_uniforms(shader, 1);
+    torch_light.set_uniforms(shader, 0, {camera.x, camera.y});
+    window_light.set_uniforms(shader, 1, {camera.x, camera.y});
 }
 
 void Game::draw()
@@ -290,19 +271,6 @@ void Game::draw()
     update_shaders();
 
     draw_tilemap();
-
-    { // TODO(omar): remove all this shit and make the window a game entity
-        Texture* win = asset_m.get_asset<Texture>(ASSETS_PATH"win_wood.png");
-        if (win) 
-        {
-            window_x = (window_pos.x - win->width * window_scale / 2) - floorf(camera.x);
-            window_y = (window_pos.y - win->height * window_scale) - floorf(camera.y);
-
-            window_light.x = window_x;
-            window_light.y = window_y;
-            DrawTextureEx(*win, {floorf(window_x), floorf(window_y)}, 0, window_scale, WHITE);
-        }
-    }
 
     GameplaySystems::render_drawable_system(*this);
 
@@ -385,11 +353,11 @@ void Game::draw_debug()
         (unsigned char)(255 * window_light.color.b),
         255
     };
-    DrawRectangle((int)(window_light.x), (int)(window_light.y), 4, 4, window_color);
-    DrawCircleLines((int)(window_light.x), (int)(window_light.y), window_light.radius, window_color);
+    DrawRectangle((int)(window_light.x - camera.x), (int)(window_light.y - camera.y), 4, 4, window_color);
+    DrawCircleLines((int)(window_light.x - camera.x), (int)(window_light.y - camera.y), window_light.radius, window_color);
 
-    DrawCircleLines((int)(torch_light.x), (int)(torch_light.y), torch_light.radius, WHITE);
-    DrawRectangle((int)(torch_light.x), (int)(torch_light.y), 4, 4, WHITE);
+    DrawCircleLines((int)(torch_light.x - camera.x), (int)(torch_light.y - camera.y), torch_light.radius, WHITE);
+    DrawRectangle((int)(torch_light.x - camera.x), (int)(torch_light.y - camera.y), 4, 4, WHITE);
 }
 
 void Game::render_buffer()
@@ -591,4 +559,23 @@ void Game::load_tileset(const std::string& filepath)
     }
 
     mf_load_tileset_free(&tiles, tiles_count);
+}
+
+void Game::load_castle()
+{
+    load_tilemap(ASSETS_PATH"map.hgm");
+    create_torch(520, 270);
+    create_window(150, 225);
+    create_table(450, 293);
+    create_player(300, 180);
+
+    torch_light.radius = 200;
+    torch_light.color = {1.0f, 0.9f, 0.6f};
+    torch_light.height = 70.0f;
+
+    window_light.radius = 200;
+    window_light.height = 200.0f;
+    window_light.color = {172.0f / 255, 172.0f / 255, 193.0f / 255};
+
+    ambient_attenuation = 0.05f;
 }
