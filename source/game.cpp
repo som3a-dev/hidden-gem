@@ -8,6 +8,7 @@
 
 #include <raymath.h>
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <utility>
@@ -72,8 +73,8 @@ void Game::init()
     window_light.radius = 200;
     window_light.height = 200.0f;
     window_light.color = {172.0f / 255, 172.0f / 255, 193.0f / 255};
-    window_light.x = 190;
-    window_light.y = 180 + 50;
+    window_pos.x = 190;
+    window_pos.y = 180 + 50;
 
     ambient_attenuation = 0.05f;
 
@@ -275,6 +276,32 @@ void Game::update()
     interactable_update_system(world, *this);
     animated_drawable_system(world, asset_m);
 
+    const ECS::TransformComponent* player_trans = world.transforms.get_component(player);
+    if (player_trans)
+    {
+        const ECS::CollisionComponent* player_col = world.collisions.get_component(player);
+        static const int max_left = (int)(draw_buf.w * 0.2f);
+        static const int max_right = (int)(draw_buf.w * 0.8f);
+        
+        const float left_border = camera.target_x + max_left; 
+        const float right_border = camera.target_x + max_right;
+
+        const float player_x = player_trans->x;
+        const float player_right = player_x + floorf(player_col->rect.x + player_col->rect.width); 
+
+        if (player_right > right_border) {
+            camera.target_x += (player_right - right_border);
+        }
+
+        if (player_x < left_border) {
+            camera.target_x -= (left_border - player_x);
+        }
+
+        camera.target_x = floorf(camera.target_x);
+    }
+
+    camera.update(dt);
+
     current_normal_map = ASSETS_PATH"normal_map.png";
 
     box.update(); 
@@ -303,8 +330,6 @@ void Game::draw()
         BeginShaderMode(shader);
     }
 
-    torch_light.set_uniforms(shader, 0);
-    window_light.set_uniforms(shader, 1);
     if (normal_map)
     {
         int normal_map_uniform = GetShaderLocation(shader, "normalMap");
@@ -316,23 +341,22 @@ void Game::draw()
 
     draw_tilemap();
 
-    if (use_shader)
-    {
-//        EndShaderMode();
-    }
-
     float window_scale = 0.5f;
-    float window_x = (window_light.x - win->width * window_scale / 2);
-    float window_y = (window_light.y - win->height * window_scale);
+    float window_x = (window_pos.x - win->width * window_scale / 2) - camera.x;
+    float window_y = (window_pos.y - win->height * window_scale) - camera.y;
 
-    DrawTextureEx(*win, {window_x, window_y}, 0, window_scale, WHITE);
+    window_light.x = window_x;
+    window_light.y = window_y;
 
-    if (use_shader)
-    {
-//        BeginShaderMode(shader);
-    }
+    torch_light.x = torch_pos.x - camera.x;
+    torch_light.y = torch_pos.y - camera.y;
 
-    GameplaySystems::render_drawable_system(world, asset_m);
+    torch_light.set_uniforms(shader, 0);
+    window_light.set_uniforms(shader, 1);
+
+    DrawTextureEx(*win, {floorf(window_x), floorf(window_y)}, 0, window_scale, WHITE);
+
+    GameplaySystems::render_drawable_system(world, asset_m, camera);
 
     if (use_shader)
     {
@@ -358,8 +382,8 @@ void Game::draw()
         ECS::TransformComponent* player_trans = world.transforms.get_component(player);
         assert(player_trans);
 
-        snprintf(buf, sizeof(buf), "Player: %d, %d", (int)(roundf(player_trans->x)),
-        (int)(roundf(player_trans->y)));
+        snprintf(buf, sizeof(buf), "Player: %f, %f", ((player_trans->x)),
+        ((player_trans->y)));
         DrawText(buf, 0, y, fontsz, RED);
         y += fontsz;
 
@@ -463,36 +487,39 @@ void Game::draw_tilemap()
                 (float)tile_height
             };
 
+            tile_rect.x -= camera.x;
+            tile_rect.y -= camera.y;
+
+            tile_rect.x = floorf(tile_rect.x);
+            tile_rect.y = floorf(tile_rect.y);
+
             Tile* tile = asset_m.get_asset<Tile>(std::to_string(id));
             assert(tile);
-
+            Texture2D* texture = asset_m.get_asset<Texture2D>(tile->texture_id);
+            if (texture)
             {
-                Texture2D* texture = asset_m.get_asset<Texture2D>(tile->texture_id);
-                if (texture)
+                if (tile->sheet_w == 0)
                 {
-                    if (tile->sheet_w == 0)
-                    {
-                        // Not a spritesheet, draw the entire texture
-                        DrawTexturePro(*texture, {0, 0, (float)(texture->width), (float)(texture->height)},
-                        tile_rect, {0, 0}, 0, WHITE);
-                    }
-                    else
-                    {
-                        int sprite_w = texture->width / tile->sheet_w;
-                        int sprite_h = texture->height / tile->sheet_h;
-                        Rectangle src;
-                        src.x = (float)(tile->sheet_x * sprite_w);
-                        src.y = (float)(tile->sheet_y * sprite_h);
-                        src.width = (float)sprite_w;
-                        src.height = (float)sprite_h;
-
-                        DrawTexturePro(*texture, src, tile_rect, {0, 0}, 0, WHITE);
-                    }
+                    // Not a spritesheet, draw the entire texture
+                    DrawTexturePro(*texture, {0, 0, (float)(texture->width), (float)(texture->height)},
+                    tile_rect, {0, 0}, 0, WHITE);
                 }
                 else
                 {
-                    DrawRectangle(x, y, tile_width, tile_height, RED);
+                    int sprite_w = texture->width / tile->sheet_w;
+                    int sprite_h = texture->height / tile->sheet_h;
+                    Rectangle src;
+                    src.x = (float)(tile->sheet_x * sprite_w);
+                    src.y = (float)(tile->sheet_y * sprite_h);
+                    src.width = (float)sprite_w;
+                    src.height = (float)sprite_h;
+
+                    DrawTexturePro(*texture, src, tile_rect, {0, 0}, 0, WHITE);
                 }
+            }
+            else
+            {
+                DrawRectangle(x, y, tile_width, tile_height, RED);
             }
         }
     }
@@ -511,6 +538,11 @@ void Game::draw_player_debug_overlay()
             player_collision->rect.width,
             player_collision->rect.height
         };
+        rect.x -= camera.x;
+        rect.y -= camera.y;
+
+        rect.x = floorf(rect.x);
+        rect.y = floorf(rect.y);
         DrawRectangleLinesEx(rect, 1, RED);
     }
 }
@@ -598,4 +630,10 @@ void Game::load_tileset(const std::string& filepath)
     }
 
     mf_load_tileset_free(&tiles, tiles_count);
+}
+
+void Game::Camera::update(float dt)
+{
+    const float smoothing = 5;
+    x = ((x) * (smoothing - 1) + target_x) / smoothing;
 }

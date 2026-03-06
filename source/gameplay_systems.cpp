@@ -220,7 +220,7 @@ namespace GameplaySystems
         }
     }
 
-    void render_drawable_system(ECS::World& world, const AssetManager& asset_m)
+    void render_drawable_system(ECS::World& world, const AssetManager& asset_m, const Game::Camera& camera)
     {
         for (DrawableComponent& drawable : world.drawables.components)
         {
@@ -260,6 +260,12 @@ namespace GameplaySystems
                 drawable.w = (int)(src_rect.width);
                 drawable.h = (int)(src_rect.height);
             }
+            
+            dst_rect.x -= floorf(camera.x);
+            dst_rect.y -= floorf(camera.y);
+
+            dst_rect.x = floorf(dst_rect.x);
+            dst_rect.y = floorf(dst_rect.y);
 
             DrawTexturePro(*texture, src_rect, dst_rect, {0, 0}, 0, WHITE);
         }
@@ -294,6 +300,9 @@ namespace GameplaySystems
 
                 popup_pos.y = popup_pos.y + std::sin((float)(GetTime()) * speed) * float_strength;
 
+                popup_pos.x -= game.camera.x;
+                popup_pos.y -= game.camera.y;
+
 //                printf("%f", popup_pos.y);
 
 //                printf(", %f\n", roundf(popup_pos.y));
@@ -319,12 +328,11 @@ namespace GameplaySystems
                     assert(trans);
                     assert(col);
 
-                    int text_x = (int)(trans->x + col->rect.x + col->rect.width);
-                    int text_y = (int)(trans->y + col->rect.y /*+ player_col->rect.height*/);
-                    Vector2 text_pos = {(float)text_x, (float)text_y};
+                    int text_x = (int)(trans->x + col->rect.x + col->rect.width - game.camera.x);
+                    int text_y = (int)(trans->y + col->rect.y - game.camera.y); 
 
                     game.QueueTextEx(game.font, "[K] Interact", {(float)(text_x + 1), (float)(text_y + 1)}, 10, 1, DARKGRAY);
-                    game.QueueTextEx(game.font, "[K] Interact", text_pos, 10, 1, WHITE);
+                    game.QueueTextEx(game.font, "[K] Interact", {(float)text_x, (float)text_y}, 10, 1, WHITE);
                     break;
                 }
             }

@@ -15,9 +15,22 @@
 
 #include <vector>
 
+
 struct Game
 {
 public:
+    struct Camera
+    {
+        float x;
+        float y;
+
+        // We smoothly interpolate to that
+        float target_x; 
+        float target_y;
+
+        void update(float dt);
+    };
+
     bool running;
     int screen_width;
     int screen_height;
@@ -40,6 +53,12 @@ public:
     float gravity;
 
     int player;
+
+    Camera camera;
+
+    // Positions in world space, the LightSources have the screen space position
+    Vector2 torch_pos;
+    Vector2 window_pos;
 
     LightSource torch_light;
     LightSource window_light;

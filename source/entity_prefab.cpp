@@ -38,7 +38,7 @@ void Game::create_player(float x, float y)
     ECS::TransformComponent transform = {x, y};
 
     ECS::MovementComponent movement;
-    movement.speed = 150.0f;
+    movement.speed = 120.0f;
     movement.gravity = gravity;
 
     ECS::CollisionComponent collision;
@@ -83,8 +83,8 @@ void Game::create_torch(float x, float y)
     world.drawables.add_component(entity, std::move(drawable));
     world.animated_drawables.add_component(entity, std::move(animated_drawable));
 
-    torch_light.x = transform.x + 24;
-    torch_light.y = transform.y + 12;
+    torch_pos.x = transform.x + 24;
+    torch_pos.y = transform.y + 12;
 }
 
 void Game::create_table(float x, float y)

@@ -21,7 +21,7 @@ namespace GameplaySystems
 
     void animated_drawable_system(ECS::World& world, const AssetManager& asset_m);
 
-    void render_drawable_system(ECS::World& world, const AssetManager& asset_m);
+    void render_drawable_system(ECS::World& world, const AssetManager& asset_m, const Game::Camera& camera);
 
     void draw_ui_system(ECS::World& world, Game& game);
 
