@@ -1,39 +1,43 @@
 #ifndef _GAME_H
 #define _GAME_H
 
-#include <raylib.h>
 #include "asset_manager.h"
 #include "frame_animation.h"
 #include "ecs/world.h"
 #include "tilemap.h"
 #include "light_source.h"
 #include "game_draw_buffer.h"
+#include "camera.h"
 
 #include "ui/textbox.h"
 #include "ui/popup_box.h"
 #include "ui/question_panel.h"
 
+#include <raylib.h>
 #include <vector>
-
 
 struct Game
 {
 public:
-    struct Camera
-    {
-        float x;
-        float y;
-
-        // We smoothly interpolate to that
-        float target_x; 
-        float target_y;
-
-        void update(float dt);
-    };
-
     bool running;
+
+    void init();
+    void destroy();
+    void loop();
+
+    // Some counterparts of raylib functions, matching in args and case
+
+    // Queue text to be drawn in the UI/Screen pass rather than the draw buffer pass
+    // Positions here are the logical positions as would be drawn in the draw buffer,
+    // They get scaled to the screen.
+    void QueueText(const char* text, int x, int y, int fontsz, Color color);
+    void QueueTextEx(Font _font, const char* text, Vector2 pos, float fontsz, float spacing, Color color);
+
+    int tile_width;
+    int tile_height;
     int screen_width;
     int screen_height;
+    float dt; // delta time in ms
 
     Shader shader;
     GameDrawBuffer draw_buf;
@@ -46,15 +50,12 @@ public:
 
     ECS::World world;
     Tilemap tilemap;
-    int tile_width;
-    int tile_height;
 
-    float dt; // delta time in ms
     float gravity;
 
     int player;
 
-    Camera camera;
+    FollowCamera camera;
 
     // Positions in world space, the LightSources have the screen space position
     Vector2 torch_pos;
@@ -69,38 +70,24 @@ public:
     UI::QuestionPanel question_panel;
     UI::PopupBox popup;
 
-    void init();
-    void destroy();
-    void loop();
+    int missions_done = 0;
 
-    // Some counterparts of raylib functions, matching in args and case
+    bool use_shader = true;
 
-    // Queue text to be drawn in the UI/Screen pass rather than the draw buffer pass
-    // Positions here are the logical positions as would be drawn in the draw buffer,
-    // They get scaled to the screen.
-    void QueueText(const char* text, int x, int y, int fontsz, Color color);
-    void QueueTextEx(Font _font, const char* text, Vector2 pos, float fontsz, float spacing, Color color);
+    Texture win = {0};
+    float window_x = 0;
+    float window_y = 0;
+    float window_scale = 0.5f;
 
     // Callbacks
     static void on_question_answered(Game* game);
 
-private:    
-    struct TextDrawCall
-    {
-        Font font;
-        std::string text;
-        Vector2 pos;
-        float fontsz;
-        float spacing;
-        Color color;
-    };
-
-    std::vector<TextDrawCall> td_calls;
-
-    int missions_done = 0;
-
     void update();
+    void update_shaders();
     void draw();
+    void draw_ui();
+    void draw_debug();
+    void render_buffer();
    
     // Draw all the TextDrawCalls for the frame, and clear the list
     void draw_td_calls();
@@ -116,6 +103,19 @@ private:
 
     void load_tilemap(const std::string& filepath);
     void load_tileset(const std::string& filepath);
+
+    private:
+    struct TextDrawCall
+    {
+        Font font;
+        std::string text;
+        Vector2 pos;
+        float fontsz;
+        float spacing;
+        Color color;
+    };
+
+    std::vector<TextDrawCall> td_calls;
 };
 
 #endif

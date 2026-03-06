@@ -24,13 +24,13 @@ using namespace ECS;
 
 namespace GameplaySystems
 {
-    void transform_update_system(ECS::World& world, const Game& game)
+    void transform_update_system(Game& game)
     {
-        for (int entity : world.transforms.entities)
+        for (int entity : game.world.transforms.entities)
         {
-            TransformComponent* transform = world.transforms.get_component(entity);
-            DrawableComponent* drawable = world.drawables.get_component(entity);
-            MovementComponent* movement = world.movements.get_component(entity);
+            TransformComponent* transform = game.world.transforms.get_component(entity);
+            DrawableComponent* drawable = game.world.drawables.get_component(entity);
+            MovementComponent* movement = game.world.movements.get_component(entity);
 
             if (movement)
             {
@@ -46,15 +46,15 @@ namespace GameplaySystems
         }
     }
 
-    void collision_update_system(ECS::World& world, const Game& game, const Tilemap& tilemap)
+    void collision_update_system(Game& game)
     {
-        for (int entity : world.collisions.entities)
+        for (int entity : game.world.collisions.entities)
         {
-            CollisionComponent* collision = world.collisions.get_component(entity);
+            CollisionComponent* collision = game.world.collisions.get_component(entity);
 
-            MovementComponent* movement = world.movements.get_component(entity);
+            MovementComponent* movement = game.world.movements.get_component(entity);
             if (movement == nullptr) continue;
-            TransformComponent* transform = world.transforms.get_component(entity);
+            TransformComponent* transform = game.world.transforms.get_component(entity);
             if (transform == nullptr) continue;
  
             Rectangle entity_rect = {
@@ -65,7 +65,7 @@ namespace GameplaySystems
             };
 
             entity_rect.x += movement->velocity.x * game.dt;
-            int collision_count = Collision::get_colliding_tiles(game, tilemap, entity_rect,
+            int collision_count = Collision::get_colliding_tiles(game, game.tilemap, entity_rect,
                                            collision->_colliding_tiles.data(),
                                            collision->_colliding_tiles.size());
 
@@ -93,7 +93,7 @@ namespace GameplaySystems
             entity_rect.x = transform->x + collision->rect.x; // Check the actual current x position, in case we snapped
 
             entity_rect.y += movement->velocity.y * game.dt;
-            collision_count = Collision::get_colliding_tiles(game, tilemap, entity_rect,
+            collision_count = Collision::get_colliding_tiles(game, game.tilemap, entity_rect,
                                            collision->_colliding_tiles.data(),
                                            collision->_colliding_tiles.size());
 
@@ -121,22 +121,22 @@ namespace GameplaySystems
         }
     }
 
-    void interactable_update_system(ECS::World& world, Game& game)
+    void interactable_update_system(Game& game)
     {
         // TODO(omar): maybe this entire model should be changed, and we should have
         // players looking for nearby interactables, storing the data, handling everything
         // and interactables should only have a interaction radius and no system
-        for (int entity : world.interactables.entities)        
+        for (int entity : game.world.interactables.entities)        
         {
-            InteractableComponent* comp = world.interactables.get_component(entity);
-            TransformComponent* trans = world.transforms.get_component(entity);
+            InteractableComponent* comp = game.world.interactables.get_component(entity);
+            TransformComponent* trans = game.world.transforms.get_component(entity);
 
             assert(trans);
 
-            for (int player : world.players.entities)
+            for (int player : game.world.players.entities)
             {
-                TransformComponent* player_trans = world.transforms.get_component(player);
-                CollisionComponent* player_col = world.collisions.get_component(player);
+                TransformComponent* player_trans = game.world.transforms.get_component(player);
+                CollisionComponent* player_col = game.world.collisions.get_component(player);
                 assert(player_trans);
                 assert(player_col);
 
@@ -183,14 +183,14 @@ namespace GameplaySystems
         }
     }
 
-    void animated_drawable_system(ECS::World& world, const AssetManager& asset_m)
+    void animated_drawable_system(Game& game)
     {
-        for (int entity : world.animated_drawables.entities)
+        for (int entity : game.world.animated_drawables.entities)
         {
             AnimatedDrawableComponent* animated_drawable =
-            world.animated_drawables.get_component(entity);
+            game.world.animated_drawables.get_component(entity);
 
-            DrawableComponent* drawable = world.drawables.get_component(entity);
+            DrawableComponent* drawable = game.world.drawables.get_component(entity);
 
             if (animated_drawable->animation_id.empty())
             {
@@ -198,7 +198,7 @@ namespace GameplaySystems
             }
             else if (animated_drawable->animation.id != animated_drawable->animation_id)
             {
-                FrameAnimation* og_animation = asset_m.get_asset<FrameAnimation>
+                FrameAnimation* og_animation = game.asset_m.get_asset<FrameAnimation>
                 (animated_drawable->animation_id);
 
                 assert(og_animation);
@@ -220,12 +220,12 @@ namespace GameplaySystems
         }
     }
 
-    void render_drawable_system(ECS::World& world, const AssetManager& asset_m, const Game::Camera& camera)
+    void render_drawable_system(Game& game)
     {
-        for (DrawableComponent& drawable : world.drawables.components)
+        for (DrawableComponent& drawable : game.world.drawables.components)
         {
 //            std::cout << "Draw " << drawable.texture_path << std::endl;
-            Texture2D* texture = asset_m.get_asset<Texture2D>(drawable.texture_path);
+            Texture2D* texture = game.asset_m.get_asset<Texture2D>(drawable.texture_path);
 
             if (texture == nullptr) continue;
 
@@ -261,8 +261,8 @@ namespace GameplaySystems
                 drawable.h = (int)(src_rect.height);
             }
             
-            dst_rect.x -= floorf(camera.x);
-            dst_rect.y -= floorf(camera.y);
+            dst_rect.x -= floorf(game.camera.x);
+            dst_rect.y -= floorf(game.camera.y);
 
             dst_rect.x = floorf(dst_rect.x);
             dst_rect.y = floorf(dst_rect.y);
@@ -271,17 +271,17 @@ namespace GameplaySystems
         }
     }
 
-    void draw_ui_system(ECS::World& world, Game& game)
+    void draw_ui_system(Game& game)
     {
         Texture* interact_tex = game.asset_m.get_asset<Texture>(ASSETS_PATH"emote22-smol.png");
         int interact_tex_width = interact_tex->width * 3;
         int interact_tex_height = interact_tex->height * 3;
 
-        for (int entity : world.interactables.entities)
+        for (int entity : game.world.interactables.entities)
         {
-            InteractableComponent* comp = world.interactables.get_component(entity);
-            TransformComponent* trans = world.transforms.get_component(entity);
-            DrawableComponent* drawable = world.drawables.get_component(entity);
+            InteractableComponent* comp = game.world.interactables.get_component(entity);
+            TransformComponent* trans = game.world.transforms.get_component(entity);
+            DrawableComponent* drawable = game.world.drawables.get_component(entity);
 
             assert(trans);
             assert(drawable);
@@ -314,16 +314,16 @@ namespace GameplaySystems
             }
         }
 
-        for (int player : world.players.entities)
+        for (int player : game.world.players.entities)
         {
-            for (int interactable : world.interactables.entities)
+            for (int interactable : game.world.interactables.entities)
             {
-                InteractableComponent* interact = world.interactables.get_component(interactable);
+                InteractableComponent* interact = game.world.interactables.get_component(interactable);
 
                 if (interact->close_player_id == player)
                 {
-                    TransformComponent* trans = world.transforms.get_component(player);
-                    CollisionComponent* col = world.collisions.get_component(player);
+                    TransformComponent* trans = game.world.transforms.get_component(player);
+                    CollisionComponent* col = game.world.collisions.get_component(player);
 
                     assert(trans);
                     assert(col);
@@ -339,32 +339,32 @@ namespace GameplaySystems
         }
     }
 
-    void player_system(ECS::World& world, float dt)
+    void player_system(Game& game)
     {
-        for (int entity : world.players.entities)
+        for (int entity : game.world.players.entities)
         {
-            PlayerComponent* player = world.players.get_component(entity);
+            PlayerComponent* player = game.world.players.get_component(entity);
 
-            TransformComponent* transform = world.transforms.get_component(entity);
+            TransformComponent* transform = game.world.transforms.get_component(entity);
             if (transform == nullptr) continue;
 
-            MovementComponent* movement = world.movements.get_component(entity);
+            MovementComponent* movement = game.world.movements.get_component(entity);
             if (movement == nullptr) continue;
 
-            CollisionComponent* collision = world.collisions.get_component(entity);
+            CollisionComponent* collision = game.world.collisions.get_component(entity);
             if (collision == nullptr) continue;
 
             AnimatedDrawableComponent* animated_drawable =
-            world.animated_drawables.get_component(entity);
+            game.world.animated_drawables.get_component(entity);
             if (animated_drawable == nullptr) continue;
 
-            DrawableComponent* drawable = world.drawables.get_component(entity);
+            DrawableComponent* drawable = game.world.drawables.get_component(entity);
             if (drawable == nullptr) continue;
 
             // Gravity
             if (collision->on_ground == false)
             {
-                movement->velocity.y += movement->gravity * dt;
+                movement->velocity.y += movement->gravity * game.dt;
                 if (movement->velocity.y > movement->gravity)
                 {
                     movement->velocity.y = movement->gravity;
@@ -377,7 +377,7 @@ namespace GameplaySystems
 
             if (IsKeyDown(KEY_D))
             {
-                movement->velocity.x += player->accel * dt;
+                movement->velocity.x += player->accel * game.dt;
                 if (movement->velocity.x > movement->speed)
                 {
                     movement->velocity.x = movement->speed;
@@ -388,7 +388,7 @@ namespace GameplaySystems
             }
             else if (IsKeyDown(KEY_A))
             {
-                movement->velocity.x -= player->accel * dt;
+                movement->velocity.x -= player->accel * game.dt;
                 if (movement->velocity.x < -(movement->speed))
                 {
                     movement->velocity.x = -(movement->speed);
@@ -401,13 +401,13 @@ namespace GameplaySystems
             {
                 if (movement->velocity.x > 0)
                 {
-                    movement->velocity.x -= player->friction * dt;
+                    movement->velocity.x -= player->friction * game.dt;
                     if (movement->velocity.x < 0) movement->velocity.x = 0;
                 }
 
                 else if (movement->velocity.x < 0)
                 {
-                    movement->velocity.x += player->friction * dt;
+                    movement->velocity.x += player->friction * game.dt;
                     if (movement->velocity.x > 0) movement->velocity.x = 0;
                 }
 

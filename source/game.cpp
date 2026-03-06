@@ -30,6 +30,9 @@ void Game::init()
     draw_buf.h = 360;
     draw_buf.tex = LoadRenderTexture(draw_buf.w, draw_buf.h);
 
+    camera.max_left = draw_buf.w * 0.2f;
+    camera.max_right = draw_buf.w * 0.8f;
+
     gravity = 1000.0f;
 
     SetTargetFPS(60);
@@ -54,7 +57,6 @@ void Game::init()
     asset_m.load_frame_animation("torch_idle", std::move(anim));
 
     load_tileset(ASSETS_PATH"tileset.json");
-
     tilemap.create(screen_width / tile_width * 2, screen_height / tile_height * 2);
     load_tilemap(ASSETS_PATH"map.hgm");
 
@@ -130,6 +132,8 @@ void Game::init()
     {
         font = GetFontDefault();
     }
+
+    current_normal_map = ASSETS_PATH"normal_map.png";
 }
 
 void Game::destroy()
@@ -196,10 +200,9 @@ void Game::update()
     {
         ToggleFullscreen();
     }
-    {
-        screen_width = GetScreenWidth();
-        screen_height = GetScreenHeight();
-    }
+
+    screen_width = GetScreenWidth();
+    screen_height = GetScreenHeight();
 
 //    dt = GetFrameTime();
     dt = 0.016f;
@@ -231,95 +234,49 @@ void Game::update()
         debug_draw = !debug_draw;
     }
 
-    if (torch_light.x > screen_width)
-    {
-        torch_light.x = -100;
-    }
-
-    if (IsKeyDown(KEY_UP))
-    {
-        torch_light.radius += 5;
-    }
-    else if (IsKeyDown(KEY_DOWN))
-    {
-        torch_light.radius -= 5;
-    }
-
-    if (IsKeyDown(KEY_RIGHT))
-    {
-        torch_light.height += 5;
-    }
-    else if (IsKeyDown(KEY_LEFT))
-    {
-        torch_light.height -= 5;
-    }
-
-    if (IsKeyPressed(KEY_Z))
-    {
-        popup.flip();
-    }
-
-    if (torch_light.radius < 0)
-    {
-        torch_light.radius = 0;
-    }
-    if (torch_light.height < 0)
-    {
-        torch_light.height = 0;
-    }
-
     using namespace GameplaySystems;
-    player_system(world, dt);
+    player_system(*this);
+    collision_update_system(*this);
+    transform_update_system(*this);
+    interactable_update_system(*this);
+    animated_drawable_system(*this);
 
-    collision_update_system(world, *this, tilemap);
-    transform_update_system(world, *this);
-    interactable_update_system(world, *this);
-    animated_drawable_system(world, asset_m);
-
-    const ECS::TransformComponent* player_trans = world.transforms.get_component(player);
+    ECS::TransformComponent* player_trans = world.transforms.get_component(player);
     if (player_trans)
     {
-        const ECS::CollisionComponent* player_col = world.collisions.get_component(player);
-        static const int max_left = (int)(draw_buf.w * 0.2f);
-        static const int max_right = (int)(draw_buf.w * 0.8f);
-        
-        const float left_border = camera.target_x + max_left; 
-        const float right_border = camera.target_x + max_right;
-
-        const float player_x = player_trans->x;
-        const float player_right = player_x + floorf(player_col->rect.x + player_col->rect.width); 
-
-        if (player_right > right_border) {
-            camera.target_x += (player_right - right_border);
-        }
-
-        if (player_x < left_border) {
-            camera.target_x -= (left_border - player_x);
-        }
-
-        camera.target_x = floorf(camera.target_x);
+        camera.target = {player_trans->x, player_trans->y};
     }
-
     camera.update(dt);
-
-    current_normal_map = ASSETS_PATH"normal_map.png";
 
     box.update(); 
     question_panel.update(this);
     popup.update(this);
+
+    torch_light.x = torch_pos.x - camera.x;
+    torch_light.y = torch_pos.y - camera.y;
+}
+
+void Game::update_shaders()
+{
+    const Texture2D* normal_map = asset_m.get_asset<Texture2D>(current_normal_map);
+    if (normal_map)
+    {
+        int normal_map_uniform = GetShaderLocation(shader, "normalMap");
+        SetShaderValueTexture(shader, normal_map_uniform, *normal_map);
+    }
+
+    int ambient_uniform = GetShaderLocation(shader, "ambientAtt");
+    SetShaderValue(shader, ambient_uniform, &ambient_attenuation, SHADER_UNIFORM_FLOAT);
+
+    torch_light.set_uniforms(shader, 0);
+    window_light.set_uniforms(shader, 1);
 }
 
 void Game::draw()
 {
-    const Texture2D* normal_map = asset_m.get_asset<Texture2D>(current_normal_map);
-
     BeginTextureMode(draw_buf.tex);
     ClearBackground({3, 3, 3, 255});
 
-    Texture* win = asset_m.get_asset<Texture>(ASSETS_PATH"win_wood.png");
-    assert(win);
-
-    static bool use_shader = true;
     if (IsKeyPressed(KEY_I))
     {
         use_shader = !use_shader;
@@ -330,80 +287,46 @@ void Game::draw()
         BeginShaderMode(shader);
     }
 
-    if (normal_map)
-    {
-        int normal_map_uniform = GetShaderLocation(shader, "normalMap");
-        SetShaderValueTexture(shader, normal_map_uniform, *normal_map);
-    }
-
-    int ambient_uniform = GetShaderLocation(shader, "ambientAtt");
-    SetShaderValue(shader, ambient_uniform, &ambient_attenuation, SHADER_UNIFORM_FLOAT);
+    update_shaders();
 
     draw_tilemap();
 
-    float window_scale = 0.5f;
-    float window_x = (window_pos.x - win->width * window_scale / 2) - camera.x;
-    float window_y = (window_pos.y - win->height * window_scale) - camera.y;
+    { // TODO(omar): remove all this shit and make the window a game entity
+        Texture* win = asset_m.get_asset<Texture>(ASSETS_PATH"win_wood.png");
+        if (win) 
+        {
+            window_x = (window_pos.x - win->width * window_scale / 2) - floorf(camera.x);
+            window_y = (window_pos.y - win->height * window_scale) - floorf(camera.y);
 
-    window_light.x = window_x;
-    window_light.y = window_y;
+            window_light.x = window_x;
+            window_light.y = window_y;
+            DrawTextureEx(*win, {floorf(window_x), floorf(window_y)}, 0, window_scale, WHITE);
+        }
+    }
 
-    torch_light.x = torch_pos.x - camera.x;
-    torch_light.y = torch_pos.y - camera.y;
-
-    torch_light.set_uniforms(shader, 0);
-    window_light.set_uniforms(shader, 1);
-
-    DrawTextureEx(*win, {floorf(window_x), floorf(window_y)}, 0, window_scale, WHITE);
-
-    GameplaySystems::render_drawable_system(world, asset_m, camera);
+    GameplaySystems::render_drawable_system(*this);
 
     if (use_shader)
     {
         EndShaderMode();
     }
 
-    GameplaySystems::draw_ui_system(world, *this);
+    GameplaySystems::draw_ui_system(*this);
 
     if (debug_draw)
     {
-        draw_player_debug_overlay();
-        draw_tilemap_debug_overlay();
-
-        int y = 0;
-        int fps = GetFPS();
-        char buf[512];
-
-        const int fontsz = 16;
-        snprintf(buf, sizeof(buf), "FPS: %d", fps);
-        DrawText(buf, 0, y, fontsz, RED);
-        y += fontsz;
-
-        ECS::TransformComponent* player_trans = world.transforms.get_component(player);
-        assert(player_trans);
-
-        snprintf(buf, sizeof(buf), "Player: %f, %f", ((player_trans->x)),
-        ((player_trans->y)));
-        DrawText(buf, 0, y, fontsz, RED);
-        y += fontsz;
-
-        Color window_color = {
-            (unsigned char)(255 * window_light.color.r),
-            (unsigned char)(255 * window_light.color.g),
-            (unsigned char)(255 * window_light.color.b),
-            255
-        };
-        DrawRectangle((int)(window_light.x), (int)(window_light.y), 4, 4, window_color);
-        DrawCircleLines((int)(window_light.x), (int)(window_light.y), window_light.radius, window_color);
-
-        DrawCircleLines((int)(torch_light.x), (int)(torch_light.y), torch_light.radius, WHITE);
-        DrawRectangle((int)(torch_light.x), (int)(torch_light.y), 4, 4, WHITE);
+        draw_debug();
     }
 
-    box.draw();
-    question_panel.draw(this, font);
-    popup.draw(this, font);
+    draw_ui();
 
+    EndTextureMode();
+
+    render_buffer();
+}
+
+void Game::draw_ui()
+{
     Texture* book_tex = asset_m.get_asset<Texture>(ASSETS_PATH"book.png");
     if (book_tex)
     {
@@ -429,10 +352,48 @@ void Game::draw()
         QueueTextEx(font, buf, text_pos, 22, 1.0f, WHITE);
     }
 
-//    QueueTextEx(font, "Whereas recognition of the inherent dignity", {20, 20}, 16, 2, WHITE);
+    box.draw();
+    question_panel.draw(this, font);
+    popup.draw(this, font);
+}
 
-    EndTextureMode();
+void Game::draw_debug()
+{
+    draw_player_debug_overlay();
+    draw_tilemap_debug_overlay();
 
+    int y = 0;
+    int fps = GetFPS();
+    char buf[512];
+
+    const int fontsz = 16;
+    snprintf(buf, sizeof(buf), "FPS: %d", fps);
+    DrawText(buf, 0, y, fontsz, RED);
+    y += fontsz;
+
+    ECS::TransformComponent* player_trans = world.transforms.get_component(player);
+    assert(player_trans);
+
+    snprintf(buf, sizeof(buf), "Player: %f, %f", ((player_trans->x)),
+    ((player_trans->y)));
+    DrawText(buf, 0, y, fontsz, RED);
+    y += fontsz;
+
+    Color window_color = {
+        (unsigned char)(255 * window_light.color.r),
+        (unsigned char)(255 * window_light.color.g),
+        (unsigned char)(255 * window_light.color.b),
+        255
+    };
+    DrawRectangle((int)(window_light.x), (int)(window_light.y), 4, 4, window_color);
+    DrawCircleLines((int)(window_light.x), (int)(window_light.y), window_light.radius, window_color);
+
+    DrawCircleLines((int)(torch_light.x), (int)(torch_light.y), torch_light.radius, WHITE);
+    DrawRectangle((int)(torch_light.x), (int)(torch_light.y), 4, 4, WHITE);
+}
+
+void Game::render_buffer()
+{
     BeginDrawing();
     ClearBackground({20, 20, 20, 255});
 
@@ -487,8 +448,8 @@ void Game::draw_tilemap()
                 (float)tile_height
             };
 
-            tile_rect.x -= camera.x;
-            tile_rect.y -= camera.y;
+            tile_rect.x -= floorf(camera.x);
+            tile_rect.y -= floorf(camera.y);
 
             tile_rect.x = floorf(tile_rect.x);
             tile_rect.y = floorf(tile_rect.y);
@@ -630,10 +591,4 @@ void Game::load_tileset(const std::string& filepath)
     }
 
     mf_load_tileset_free(&tiles, tiles_count);
-}
-
-void Game::Camera::update(float dt)
-{
-    const float smoothing = 5;
-    x = ((x) * (smoothing - 1) + target_x) / smoothing;
 }

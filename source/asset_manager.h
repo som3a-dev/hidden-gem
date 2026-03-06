@@ -12,6 +12,10 @@
 // the asset manager stores assets in a hash table
 // it uses linear probing for collision handling
 
+// DO NOT STORE ANY POINTER TO AN ASSET THAT THE ASSET MANAGER RETURNS
+// Its lifetime can and will end if the asset table ever expands.
+// MAKE A COPY INSTEAD, or just store the asset id and get it each time. 
+
 // to add a new asset to it, you need to add a get_table<ASSET_TYPE>
 // and a load_ASSET_TYPE function
 // and a Table<ASSET_TYPE> member table

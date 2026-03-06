@@ -13,19 +13,19 @@
 
 namespace GameplaySystems
 {
-    void transform_update_system(ECS::World& world, const Game& game);
+    void transform_update_system(Game& game);
 
-    void collision_update_system(ECS::World& world, const Game& game, const Tilemap& tilemap);
+    void collision_update_system(Game& game);
 
-    void interactable_update_system(ECS::World& world, Game& game);
+    void interactable_update_system(Game& game);
 
-    void animated_drawable_system(ECS::World& world, const AssetManager& asset_m);
+    void animated_drawable_system(Game& game);
 
-    void render_drawable_system(ECS::World& world, const AssetManager& asset_m, const Game::Camera& camera);
+    void render_drawable_system(Game& game);
 
-    void draw_ui_system(ECS::World& world, Game& game);
+    void draw_ui_system(Game& game);
 
-    void player_system(ECS::World& world, float dt);
+    void player_system(Game& game);
 };
 
 #endif
