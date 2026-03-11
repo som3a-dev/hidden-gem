@@ -75,6 +75,8 @@ public:
     float window_y = 0;
     float window_scale = 0.5f;
 
+    Texture background = {0};
+
     // Callbacks
     static void on_question_answered(Game* game);
 
@@ -103,6 +105,7 @@ public:
     void load_tileset(const std::string& filepath);
 
     void load_castle();
+    void load_outside();
 
     private:
     struct TextDrawCall

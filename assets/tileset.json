@@ -25,8 +25,13 @@
         "sheet_position": [1, 4],
         "sheet_size": [12, 8]
     },
+
     {
         "id": 5,
-        "texture_id": "win.png"
+        "texture_id": "desert/2.png"
+    },
+    {
+        "id": 6,
+        "texture_id": "desert/5.png"
     }
 ]

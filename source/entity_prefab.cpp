@@ -2,17 +2,9 @@
 
 void Game::create_player(float x, float y)
 {
-    {
+/*    {
         FrameAnimation anim;
         anim.set_sheet(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png", asset_m, 8, 8);
-/*        anim.frames.push_back({0, 2});
-        anim.frames.push_back({1, 2});
-        anim.frames.push_back({2, 2});
-        anim.frames.push_back({3, 2});
-        anim.frames.push_back({4, 2});
-        anim.frames.push_back({5, 2});
-        anim.frames.push_back({6, 2});
-        anim.frames.push_back({7, 2});*/
         anim.push_frame_interval(0, 7, 2, 2);
 
         anim.interval_ms = 70;
@@ -24,16 +16,44 @@ void Game::create_player(float x, float y)
         anim.set_sheet(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png", asset_m, 8, 8);
         anim.frames.push_back({0, 0});
         anim.frames.push_back({1, 0});
-//        anim.frames.push_back({2, 0});
-//        anim.frames.push_back({3, 0});
 
         anim.interval_ms = 300;
 
         asset_m.load_frame_animation("knight_idle", std::move(anim));
+    } */
+
+    const char* sheet = ASSETS_PATH"player/soldier-plain.png";
+    FrameAnimation anim;
+    ECS::CollisionComponent collision;
+    ECS::DrawableComponent drawable;
+    drawable.scale = 2.0f;
+
+    anim.set_sheet(sheet, asset_m, 8, 7);
+    {
+        anim.frames.clear();
+        anim.push_frame_interval(1, 3, 1, 1);
+        anim.interval_ms = 300;
+
+        asset_m.load_frame_animation("soldier-idle", anim);
+
+        collision.rect = {
+            0, 0,
+            (float)anim.get_frame_width() * drawable.scale, (float)anim.get_frame_height() * drawable.scale
+        };
+    }
+    {
+        anim.frames.clear();
+/*        anim.frames.push_back({1, 2});
+        anim.frames.push_back({3, 2});
+        anim.frames.push_back({4, 2});
+        anim.frames.push_back({6, 2});*/
+        anim.push_frame_interval(1, 6, 2, 2);
+        anim.interval_ms = 100;
+
+        asset_m.load_frame_animation("soldier-walk", anim);
     }
 
-    ECS::DrawableComponent drawable;
-    drawable.scale = 2.5f;
+
 
     ECS::TransformComponent transform = {x, y};
 
@@ -41,14 +61,13 @@ void Game::create_player(float x, float y)
     movement.speed = 120.0f;
     movement.gravity = gravity;
 
-    ECS::CollisionComponent collision;
-    collision.rect.x = 32 * (2.5f / 3);
-    collision.rect.y = 48 * (2.5f / 3);
-    collision.rect.width = 32 * (2.5f / 3); 
-    collision.rect.height = 36 * (2.5f / 3);
+//    collision.rect.x = 32 * (2.5f / 3);
+//    collision.rect.y = 48 * (2.5f / 3);
+//    collision.rect.width = 32 * (2.5f / 3); 
+//    collision.rect.height = 36 * (2.5f / 3);
 
     ECS::AnimatedDrawableComponent animated_drawable;
-    animated_drawable.animation_id = "knight_idle";
+    animated_drawable.animation_id = "soldier-idle";
 
     ECS::PlayerComponent player_component;
     player_component.accel = movement.speed * 4;
@@ -83,8 +102,8 @@ void Game::create_torch(float x, float y)
     world.drawables.add_component(entity, std::move(drawable));
     world.animated_drawables.add_component(entity, std::move(animated_drawable));
 
-    torch_light.x = transform.x + 24;
-    torch_light.y = transform.y + 12;
+    torch_light.x = transform.x;
+    torch_light.y = transform.y;
 }
 
 void Game::create_table(float x, float y)

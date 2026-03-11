@@ -4,6 +4,8 @@
 
 void FollowCamera::update(float dt)
 {
+    if (!enabled) return;
+
     const float smoothing = 5;
     const float left_border = current_target.x + max_left; 
     const float right_border = current_target.x + max_right;

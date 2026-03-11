@@ -6,6 +6,8 @@
 // The reason this is not called Camera is because raylib.h took the Camera name first
 struct FollowCamera
 {
+    bool enabled = true;
+
     float x = 0;
     float y = 0;
 

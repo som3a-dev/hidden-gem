@@ -384,7 +384,7 @@ namespace GameplaySystems
                 }
 
                 drawable->flip_h = false;
-                animated_drawable->animation_id = "knight_walk";
+                animated_drawable->animation_id = "soldier-walk";
             }
             else if (IsKeyDown(KEY_A))
             {
@@ -395,7 +395,7 @@ namespace GameplaySystems
                 }
 
                 drawable->flip_h = true;
-                animated_drawable->animation_id = "knight_walk";
+                animated_drawable->animation_id = "soldier-walk";
             }
             else
             {
@@ -411,7 +411,7 @@ namespace GameplaySystems
                     if (movement->velocity.x > 0) movement->velocity.x = 0;
                 }
 
-                animated_drawable->animation_id = "knight_idle";
+                animated_drawable->animation_id = "soldier-idle";
             }
 
             if (IsKeyPressed(KEY_SPACE))

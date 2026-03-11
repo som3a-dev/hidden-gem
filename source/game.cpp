@@ -17,8 +17,8 @@ void Game::init()
 {
     screen_width = 640 * 2;
     screen_height = 360 * 2;
-    tile_width = 36;
-    tile_height = 36;
+    tile_width = 24;
+    tile_height = 24;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screen_width, screen_height, "Hidden GEM");
@@ -29,9 +29,6 @@ void Game::init()
     draw_buf.w = 640;
     draw_buf.h = 360;
     draw_buf.tex = LoadRenderTexture(draw_buf.w, draw_buf.h);
-
-    camera.max_left = draw_buf.w * 0.2f;
-    camera.max_right = draw_buf.w * 0.8f;
 
     gravity = 1000.0f;
 
@@ -48,6 +45,8 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"win_wood.png");
     asset_m.load_texture(ASSETS_PATH"wood.jpg");
     asset_m.load_texture(ASSETS_PATH"book.png");
+    asset_m.load_texture(ASSETS_PATH"desert/bg.png");
+    asset_m.load_texture(ASSETS_PATH"player/soldier-plain.png");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);
@@ -58,9 +57,6 @@ void Game::init()
 
     load_tileset(ASSETS_PATH"tileset.json");
     tilemap.create(screen_width / tile_width * 2, screen_height / tile_height * 2);
-    load_castle();
-
-//    ToggleFullscreen();
 
     shader = LoadShader(ASSETS_PATH"shaders/vertex.vs", ASSETS_PATH"shaders/fragment.fs");
 
@@ -118,6 +114,9 @@ void Game::init()
     }
 
     current_normal_map = ASSETS_PATH"normal_map.png";
+
+    load_outside();
+//    load_castle();
 }
 
 void Game::destroy()
@@ -257,6 +256,11 @@ void Game::draw()
 {
     BeginTextureMode(draw_buf.tex);
     ClearBackground({3, 3, 3, 255});
+    if (IsTextureValid(background))
+    {
+        DrawTexturePro(background, {0, 0, (float)background.width, (float)background.height},
+        {0, 0, (float)draw_buf.w, (float)draw_buf.h}, {0, 0}, 0, WHITE);
+    }
 
     if (IsKeyPressed(KEY_I))
     {
@@ -289,6 +293,7 @@ void Game::draw()
     draw_ui();
 
     EndTextureMode();
+
 
     render_buffer();
 }
@@ -340,12 +345,13 @@ void Game::draw_debug()
     y += fontsz;
 
     ECS::TransformComponent* player_trans = world.transforms.get_component(player);
-    assert(player_trans);
-
-    snprintf(buf, sizeof(buf), "Player: %f, %f", ((player_trans->x)),
-    ((player_trans->y)));
-    DrawText(buf, 0, y, fontsz, RED);
-    y += fontsz;
+    if (player_trans)
+    {
+        snprintf(buf, sizeof(buf), "Player: %f, %f", ((player_trans->x)),
+        ((player_trans->y)));
+        DrawText(buf, 0, y, fontsz, RED);
+        y += fontsz;
+    }
 
     Color window_color = {
         (unsigned char)(255 * window_light.color.r),
@@ -500,6 +506,8 @@ void Game::draw_tilemap_debug_overlay()
 
             int x = tile_x * tile_width;
             int y = tile_y * tile_height;
+            x -= (int)(camera.x);
+            y -= (int)(camera.y);
 
             Rectangle tile_rect = {
                 (float)x,
@@ -578,4 +586,30 @@ void Game::load_castle()
     window_light.color = {172.0f / 255, 172.0f / 255, 193.0f / 255};
 
     ambient_attenuation = 0.05f;
+
+    camera.max_left = draw_buf.w * 0.2f;
+    camera.max_right = draw_buf.w * 0.8f;
+
+    tile_width = 36;
+    tile_height = 36;
+}
+
+void Game::load_outside()
+{
+    load_tilemap(ASSETS_PATH"outside.hgm");
+
+    Texture* bg = asset_m.get_asset<Texture>(ASSETS_PATH"desert/bg.png");
+    if (bg)
+    {
+        background = *bg;
+    }
+    SetTextureFilter(background, TEXTURE_FILTER_ANISOTROPIC_8X);
+
+    create_player(50, 0);
+
+    camera.y = -75;
+
+    use_shader = false;
+
+    camera.enabled = false;
 }
