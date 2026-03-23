@@ -34,19 +34,17 @@ void Game::init()
 
     SetTargetFPS(60);
     
-    asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/knight.png");
-    asset_m.load_texture(ASSETS_PATH"brackeys_platformer_assets/sprites/block.png");
     asset_m.load_texture(ASSETS_PATH"normal_map.png");
     asset_m.load_texture(ASSETS_PATH"torch.png");
     asset_m.load_texture(ASSETS_PATH"emote22-smol.png");
     asset_m.load_texture(ASSETS_PATH"papyrus.jpg");
     asset_m.load_texture(ASSETS_PATH"table2.png");
-    asset_m.load_texture(ASSETS_PATH"1.png");
     asset_m.load_texture(ASSETS_PATH"win_wood.png");
-    asset_m.load_texture(ASSETS_PATH"wood.jpg");
     asset_m.load_texture(ASSETS_PATH"book.png");
     asset_m.load_texture(ASSETS_PATH"desert/bg.png");
-    asset_m.load_texture(ASSETS_PATH"player/soldier-plain.png");
+    asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-idle.png");
+    asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-walk.png");
+    asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-run.png");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);
@@ -115,8 +113,8 @@ void Game::init()
 
     current_normal_map = ASSETS_PATH"normal_map.png";
 
-    load_outside();
-//    load_castle();
+//    load_outside();
+    load_castle();
 }
 
 void Game::destroy()
@@ -572,10 +570,9 @@ void Game::load_tileset(const std::string& filepath)
 void Game::load_castle()
 {
     load_tilemap(ASSETS_PATH"map.hgm");
-    create_torch(520, 270);
+/*    create_torch(520, 270);
     create_window(150, 225);
     create_table(450, 293);
-    create_player(300, 180);
 
     torch_light.radius = 200;
     torch_light.color = {1.0f, 0.9f, 0.6f};
@@ -588,10 +585,15 @@ void Game::load_castle()
     ambient_attenuation = 0.05f;
 
     camera.max_left = draw_buf.w * 0.2f;
-    camera.max_right = draw_buf.w * 0.8f;
+    camera.max_right = draw_buf.w * 0.8f; */
+
+    camera.enabled = false;
+    use_shader = false;
 
     tile_width = 36;
     tile_height = 36;
+
+    create_player(300, 180);
 }
 
 void Game::load_outside()

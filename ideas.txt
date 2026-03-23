@@ -9,3 +9,14 @@ Add game of life in the level editor for fun
 a bird companion that follows you around
 
 Some kind of enemies/npc in the demo
+
+3D Artifact viewer
+
+Artifact collection
+
+Achievements
+
+Dashing/Wall jumping
+
+Collapsing platforms (Runner levels)
+

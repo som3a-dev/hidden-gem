@@ -1,0 +1,22 @@
+
+Sprite Offsets:
+
+right now, we hardcode sprite offsets when creating animations, because sprites often have an empty area around them.
+we do this by hardcoding offsets that we put in the collision rect of the entity. Look at the create_player() prefab for an example.
+this is messy and should be fixed, standardize something, maybe each sprite sheet has its offsets to get the conteent of the sprite out of the sprite's full frame,
+maybe fixing this will be easier to fix when animations are defined dynamically.
+
+try to fix this soon since this is the cause of a lot of problems and code smells.
+
+Hardcoded assets:
+
+animations and textures loading/creation are hardcoded in the game code,
+animations are in the entity prefabs usually, textures are in the game's init function
+this should be done dynamically instead. something similar to tileset.json
+
+Loading assets:
+
+right now, assets like textures are loaded in the game's init, move this somewhere else maybe for assets specific to entities, the entity prefab should load it ?
+or for something similar, explore an approach where if we try to get an asset from the asset manager and it doesn't exist,
+it implicitly loads it (this is possible as long as the asset id is the path, which is the case for textures)
+that could be messy though.

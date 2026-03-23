@@ -21,39 +21,49 @@ void Game::create_player(float x, float y)
 
         asset_m.load_frame_animation("knight_idle", std::move(anim));
     } */
-
-    const char* sheet = ASSETS_PATH"player/soldier-plain.png";
-    FrameAnimation anim;
     ECS::CollisionComponent collision;
     ECS::DrawableComponent drawable;
-    drawable.scale = 2.0f;
+    drawable.scale = 1.0f;
 
-    anim.set_sheet(sheet, asset_m, 8, 7);
+    const char* idle = ASSETS_PATH"male_hero_free/anims/male_hero-idle.png";
+    const char* walk = ASSETS_PATH"male_hero_free/anims/male_hero-walk.png";
+    const char* run = ASSETS_PATH"male_hero_free/anims/male_hero-run.png";
+
+    FrameAnimation anim;
+
+    // offset needed to avoid the empty part of a sprite (transparent square around it), commonly found
+    const int sprite_offset_x = 52; 
+    const int sprite_offset_y = 48;
+    const int sprite_offset_w = 53;
+    const int sprite_offset_h = 48;
     {
         anim.frames.clear();
-        anim.push_frame_interval(1, 3, 1, 1);
-        anim.interval_ms = 300;
+        anim.set_sheet(idle, asset_m, 10, 1);
+        anim.push_frame_interval(0, 10, 0, 0);
+        anim.interval_ms = 60;
 
-        asset_m.load_frame_animation("soldier-idle", anim);
+        asset_m.load_frame_animation("player-idle", anim);
 
         collision.rect = {
-            0, 0,
-            (float)anim.get_frame_width() * drawable.scale, (float)anim.get_frame_height() * drawable.scale
+            sprite_offset_x, sprite_offset_y,
+            (float)(anim.get_frame_width() - sprite_offset_w * 2) * drawable.scale,
+            (float)(anim.get_frame_height() - sprite_offset_h * 2) * drawable.scale
         };
     }
     {
         anim.frames.clear();
-/*        anim.frames.push_back({1, 2});
-        anim.frames.push_back({3, 2});
-        anim.frames.push_back({4, 2});
-        anim.frames.push_back({6, 2});*/
-        anim.push_frame_interval(1, 6, 2, 2);
-        anim.interval_ms = 100;
+        anim.set_sheet(run, asset_m, 10, 1);
+        anim.push_frame_interval(0, 10, 0, 0);
+        anim.interval_ms = 50;
 
-        asset_m.load_frame_animation("soldier-walk", anim);
+        asset_m.load_frame_animation("player-run", anim);
+
+        collision.rect = {
+            sprite_offset_x, sprite_offset_y,
+            (float)(anim.get_frame_width() - sprite_offset_w * 2) * drawable.scale,
+            (float)(anim.get_frame_height() - sprite_offset_h * 2) * drawable.scale
+        };
     }
-
-
 
     ECS::TransformComponent transform = {x, y};
 
@@ -67,11 +77,11 @@ void Game::create_player(float x, float y)
 //    collision.rect.height = 36 * (2.5f / 3);
 
     ECS::AnimatedDrawableComponent animated_drawable;
-    animated_drawable.animation_id = "soldier-idle";
+    animated_drawable.animation_id = "player-idle";
 
     ECS::PlayerComponent player_component;
-    player_component.accel = movement.speed * 4;
-    player_component.friction = movement.speed * 4;
+    player_component.accel = movement.speed * 2.5f;
+    player_component.friction = movement.speed * 6;
     player_component.jump_force = 300.0f;
 
     player = world.create_entity();
