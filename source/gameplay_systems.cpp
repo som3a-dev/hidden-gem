@@ -418,6 +418,11 @@ namespace GameplaySystems
             {
                 movement->velocity.y = -(player->jump_force);
             }
+
+            if (!collision->on_ground) 
+            {
+                animated_drawable->animation_id = "player-jump";
+            }
         }
     }
 }

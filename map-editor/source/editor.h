@@ -7,6 +7,7 @@
 #include "tilemap.h"
 #include "tileset.h"
 #include "nk_raylib.h"
+#include "scene_render.h"
 
 #include <raylib.h>
 
@@ -16,6 +17,8 @@ typedef struct
 {
     int window_w;
     int window_h;
+
+    sr_scene_draw_buffer scene;
 
     struct nk_context nk_ctx;
     struct nk_user_font nk_title_font;

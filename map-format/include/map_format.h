@@ -3,6 +3,8 @@
 
     This file (map_format.h) is the main header for the library.
 
+    The API is abbreviated as mf or MF.
+
     More rules about the library's job, These MUST be followed:
         - This library defines the canonical on-disk representation
         of maps and tilesets. Callers must convert to and from their
@@ -10,13 +12,12 @@
         For example: I don't care how you define a tilemap, but you must give me and expect me to give you
         my representation of it, a mf_tilemap_t or equivalent (specific type names are not set in stone). 
 
-        - This library is intentionally dumb about gameplay. Meaning it does not care about gameplay and shouldn't be modified to work for specific
-        gameplay related needs. More on that later in the (NOTE)s.
-
+        - This library should be dumb about gameplay, although this is not mandatory, but it is preferred to keep
+        gameplay related stuff to a minimum and aim to completely eliminate it.
+        This will be easier to do when we have stuff like dynamic tile properties.
 
 
     Some code specific details:
-        - The API is abbreviated as mf or MF.
         - All memory ownership rules are defined per-function. there is no hard standard for now.
 
         - Notes about certain types:

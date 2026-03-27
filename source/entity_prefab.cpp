@@ -28,6 +28,7 @@ void Game::create_player(float x, float y)
     const char* idle = ASSETS_PATH"male_hero_free/anims/male_hero-idle.png";
     const char* walk = ASSETS_PATH"male_hero_free/anims/male_hero-walk.png";
     const char* run = ASSETS_PATH"male_hero_free/anims/male_hero-run.png";
+    const char* jump = ASSETS_PATH"male_hero_free/anims/male_hero-jump.png";
 
     FrameAnimation anim;
 
@@ -57,6 +58,20 @@ void Game::create_player(float x, float y)
         anim.interval_ms = 50;
 
         asset_m.load_frame_animation("player-run", anim);
+
+        collision.rect = {
+            sprite_offset_x, sprite_offset_y,
+            (float)(anim.get_frame_width() - sprite_offset_w * 2) * drawable.scale,
+            (float)(anim.get_frame_height() - sprite_offset_h * 2) * drawable.scale
+        };
+    }
+    {
+        anim.frames.clear();
+        anim.set_sheet(jump, asset_m, 6, 1);
+        anim.push_frame_interval(0, 10, 0, 0);
+        anim.interval_ms = 50;
+
+        asset_m.load_frame_animation("player-jump", anim);
 
         collision.rect = {
             sprite_offset_x, sprite_offset_y,

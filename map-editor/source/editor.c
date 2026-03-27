@@ -9,6 +9,7 @@
 #include "editor_ui.h"
 
 #include "map_format.h"
+#include "scene_render.h"
 
 #include "log.h"
 
@@ -51,16 +52,18 @@ void run_editor()
 
 static void editor_init(editor_state_t* s)
 {
-    s->window_w = 1920  - (16 * 12);
-    s->window_h = 1080  - ( 9 * 12);
+    s->window_w = 640 * 2;
+    s->window_h = 360 * 2;
 
 	InitWindow(s->window_w, s->window_h, "level-editor");
     SetTargetFPS(60);
 
-    s->tile_w = 32;
-    s->tile_h = 32;
+    s->scene = sr_create_draw_buffer();
 
-    const int left_panel_width = (int)(s->window_w * 0.1f);
+    s->tile_w = SR_TILE_W;
+    s->tile_h = SR_TILE_H;
+
+/*    const int left_panel_width = (int)(s->window_w * 0.1f);
     const int right_panel_width = (int)(left_panel_width * 1.3f);
     const int top_panel_height = (int)(s->window_h * 0.05f);
 
@@ -82,7 +85,7 @@ static void editor_init(editor_state_t* s)
     s->right_panel.left = (int)(s->window_w - right_panel_width);
     s->right_panel.right = UI_PADDING;
     s->right_panel.bottom = UI_PADDING;
-    s->right_panel.top = top_panel_height + UI_PADDING;
+    s->right_panel.top = top_panel_height + UI_PADDING; */
 
 	s->bg_color.r = 20;
     s->bg_color.g = 20;
@@ -98,17 +101,19 @@ static void editor_init(editor_state_t* s)
 
     s->selected_tile_id = 1;
 
-    tilemap_create(&(s->tilemap), 48, 48);
+    tilemap_create(&(s->tilemap), 64, 64);
 
     Rectangle edit_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
     s->cursor_x = (int)(edit_rect.x / s->tile_w) + 1;
     s->cursor_y = (int)(edit_rect.y / s->tile_h) + 1;
 
-    s->camera_x = -(s->edit_area.left + s->tile_w);
-    s->camera_y = -(s->edit_area.top + s->tile_h);
+//    s->camera_x = -(s->edit_area.left + s->tile_w);
+//    s->camera_y = -(s->edit_area.top + s->tile_h);
 
     ctx = &(s->nk_ctx);
 	nk_init_default(ctx, &(s->nk_title_font));
+
+    editor_open_map(s, "C:/Users/admin/source/repos/hidden-gem/assets/map.hgm");
 }
 
 static void editor_delete(editor_state_t* s)
@@ -116,6 +121,8 @@ static void editor_delete(editor_state_t* s)
     asset_delete_assets();
 
     tilemap_delete(&(s->tilemap));
+    sr_destroy_draw_buffer(&(s->scene));
+
 	UnloadFont(s->font);
 
 	nk_free(ctx);
@@ -137,9 +144,9 @@ static void editor_update(editor_state_t* s)
     }
     s->prev_mouse_pos = (Vector2){(float)mouseX, (float)mouseY};
 
-    editor_update_ui(s);
-    editor_update_camera(s);
-    editor_update_cursor(s);
+//    editor_update_ui(s);
+//    editor_update_camera(s);
+//    editor_update_cursor(s);
 }
 
 static void editor_draw(editor_state_t* s)
@@ -147,14 +154,25 @@ static void editor_draw(editor_state_t* s)
     BeginDrawing();
     ClearBackground(s->bg_color);
 
+    BeginTextureMode(s->scene.tex);
+
     editor_draw_tilemap(s);
-    editor_draw_edit_area(s);
+//    editor_draw_edit_area(s);
     if (s->draw_cursor)
     {
-        editor_draw_cursor(s);
+//        editor_draw_cursor(s);
     }
 
-    editor_draw_ui(s);
+//    editor_draw_ui(s);
+
+    EndTextureMode();
+
+    Rectangle dst = {
+        0, 0,
+        (float)s->window_w, (float)s->window_h
+    };
+
+    sr_draw_scene(&(s->scene), dst, WHITE);
 
     nk_raylib_draw_commands(ctx);
 

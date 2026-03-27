@@ -13,6 +13,7 @@ Some kind of enemies/npc in the demo
 3D Artifact viewer
 
 Artifact collection
+- Maybe you enter a 3D pharaohic room, move towards an artifact to collect it, then go back to the game
 
 Achievements
 
@@ -20,3 +21,6 @@ Dashing/Wall jumping
 
 Collapsing platforms (Runner levels)
 
+Spikes/Some kind of trap as the death method for platforming, rather than an empty void (makes no sense for an ancient temple)
+
+The game is about being in a simulation that transported you back in time, so when you die, you just poof into ones and zeroes, no actual death

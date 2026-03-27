@@ -8,6 +8,7 @@
 #include "light_source.h"
 #include "game_draw_buffer.h"
 #include "camera.h"
+#include "scene_render.h"
 
 #include "ui/textbox.h"
 #include "ui/popup_box.h"
@@ -40,7 +41,7 @@ public:
     float dt; // delta time in ms
 
     Shader shader;
-    GameDrawBuffer draw_buf;
+    sr_scene_draw_buffer draw_buf;
     Font font;
 
     bool debug_draw;

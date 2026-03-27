@@ -1,6 +1,7 @@
 #define _CRTDBG_MAP_ALLOC
 
 #include "game.h"
+#include "scene_render.h"
 
 #include <cstdlib>
 #include <cstdio>

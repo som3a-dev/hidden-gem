@@ -17,8 +17,6 @@ void Game::init()
 {
     screen_width = 640 * 2;
     screen_height = 360 * 2;
-    tile_width = 24;
-    tile_height = 24;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screen_width, screen_height, "Hidden GEM");
@@ -26,9 +24,9 @@ void Game::init()
     screen_width = GetScreenWidth();
     screen_height = GetScreenHeight();
 
-    draw_buf.w = 640;
-    draw_buf.h = 360;
-    draw_buf.tex = LoadRenderTexture(draw_buf.w, draw_buf.h);
+    draw_buf = sr_create_draw_buffer();
+    tile_width = SR_TILE_W;
+    tile_height = SR_TILE_H;
 
     gravity = 1000.0f;
 
@@ -45,6 +43,7 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-idle.png");
     asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-walk.png");
     asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-run.png");
+    asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-jump.png");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);
@@ -119,8 +118,9 @@ void Game::init()
 
 void Game::destroy()
 {
+    sr_destroy_draw_buffer(&draw_buf);
+
     UnloadFont(font);
-    UnloadRenderTexture(draw_buf.tex);
     UnloadShader(shader);
     CloseWindow();
 }
@@ -253,7 +253,7 @@ void Game::update_shaders()
 void Game::draw()
 {
     BeginTextureMode(draw_buf.tex);
-    ClearBackground({3, 3, 3, 255});
+    ClearBackground({10, 10, 10, 255});
     if (IsTextureValid(background))
     {
         DrawTexturePro(background, {0, 0, (float)background.width, (float)background.height},
@@ -291,7 +291,6 @@ void Game::draw()
     draw_ui();
 
     EndTextureMode();
-
 
     render_buffer();
 }
@@ -590,8 +589,8 @@ void Game::load_castle()
     camera.enabled = false;
     use_shader = false;
 
-    tile_width = 36;
-    tile_height = 36;
+    tile_width = 24;
+    tile_height = 24;
 
     create_player(300, 180);
 }

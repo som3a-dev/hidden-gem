@@ -2,23 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 project(map_editor C)
 set(CMAKE_C_STANDARD 99)
 
-# Adding Raylib
-if (NOT TARGET raylib)
-    include(FetchContent)
-    set(FETCHCONTENT_QUIET FALSE)
-    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
-    set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
-
-    FetchContent_Declare(
-        raylib
-        GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
-        GIT_TAG "master"
-        GIT_PROGRESS TRUE
-    )
-endif()
-
-FetchContent_MakeAvailable(raylib)
-
 add_library(nk_impl STATIC
     source/nuklear_impl.c)
 
@@ -41,7 +24,8 @@ target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE})
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 target_link_libraries(${PROJECT_NAME} PRIVATE nk_impl)
-target_link_libraries(${PROJECT_NAME} PRIVATE map_format)
+target_link_libraries(${PROJECT_NAME} PRIVATE map-format)
+target_link_libraries(${PROJECT_NAME} PRIVATE scene-render)
 
 # Setting ASSETS_PATH
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") # Set the asset path macro to the absolute path on the dev machine

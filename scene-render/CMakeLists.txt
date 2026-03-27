@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(map-format C)
+project(scene-render C)
 
 set(CMAKE_C_STANDARD 99)
 
@@ -14,6 +14,8 @@ add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCES})
 
 # Include directories (PUBLIC so other targets can see it)
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_INCLUDE})
+
+target_link_libraries(${PROJECT_NAME} PUBLIC raylib)
 
 # Compiler warnings
 if(MSVC)

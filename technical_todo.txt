@@ -20,3 +20,7 @@ right now, assets like textures are loaded in the game's init, move this somewhe
 or for something similar, explore an approach where if we try to get an asset from the asset manager and it doesn't exist,
 it implicitly loads it (this is possible as long as the asset id is the path, which is the case for textures)
 that could be messy though.
+
+
+Logging:
+Move the logging code from all the projects into 1 library, and use it everywhere
