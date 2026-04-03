@@ -21,21 +21,14 @@ typedef struct
     sr_scene_draw_buffer scene;
 
     struct nk_context nk_ctx;
-    struct nk_user_font nk_title_font;
-    struct nk_user_font nk_menu_font;
-    struct nk_user_font nk_inner_font;
 
     Font font;
+    struct nk_user_font nk_font;
 
     Color bg_color;
 
     bool mouse_moved; // did the mouse move last frame
     Vector2 prev_mouse_pos;
-
-    panel_layout_t edit_area;
-    panel_layout_t tileset_panel;
-    panel_layout_t menu_panel;
-    panel_layout_t right_panel;
 
     tileset_t tileset;
 

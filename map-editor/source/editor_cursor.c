@@ -30,10 +30,6 @@ static bool editor_update_cursor_pos(editor_state_t* s, int new_x, int new_y)
 static bool editor_is_mouse_in_tilemap(editor_state_t* s)
 {
     Vector2 mouse_pos = GetMousePosition();
-    if (is_pos_in_rect(mouse_pos.x, mouse_pos.y, panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4)) == false)
-    {
-        return false;
-    }
 
     int new_x  = (int)((mouse_pos.x + s->camera_x) / s->tile_w);
     int new_y  = (int)((mouse_pos.y + s->camera_y) / s->tile_h);
@@ -103,16 +99,9 @@ static bool editor_update_cursor_mouse(editor_state_t* s)
 
     if (s->mouse_moved)
     {
-        Rectangle edit_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
-        if ((mouse_pos.x > edit_rect.x) && (mouse_pos.x < edit_rect.x + edit_rect.width))
-        {
-            if ((mouse_pos.y > edit_rect.y) && (mouse_pos.y < edit_rect.y + edit_rect.height))
-            {
-                int new_x  = (int)((mouse_pos.x + s->camera_x) / s->tile_w);
-                int new_y  = (int)((mouse_pos.y + s->camera_y) / s->tile_h);
-                return editor_update_cursor_pos(s, new_x, new_y);
-            }
-        }
+        int new_x  = (int)((mouse_pos.x + s->camera_x) / s->tile_w);
+        int new_y  = (int)((mouse_pos.y + s->camera_y) / s->tile_h);
+        return editor_update_cursor_pos(s, new_x, new_y);
     }
 
     return false;
@@ -200,13 +189,6 @@ void editor_draw_cursor(editor_state_t* s)
         (float)(s->cursor_x * s->tile_w) - s->camera_x, (float)(s->cursor_y * s->tile_h) - s->camera_y,
         (float)s->tile_w, (float)s->tile_h
     };
-
-    Rectangle edit_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
-
-    if (cursor_rect.x < edit_rect.x) return;
-    if (cursor_rect.y < edit_rect.y) return;
-    if ((cursor_rect.x + cursor_rect.width) > (edit_rect.x + edit_rect.width)) return;
-    if ((cursor_rect.y + cursor_rect.height) > (edit_rect.y + edit_rect.height)) return;
 
     DrawRectangleLinesEx(cursor_rect, 1, GRAY);
 }

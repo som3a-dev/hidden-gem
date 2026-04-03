@@ -21,17 +21,12 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define TOP_PANEL_HEIGHT 48
-#define LEFT_PANEL_WIDTH 256
-#define UI_PADDING 12
-
 static void editor_init(editor_state_t* s);
 static void editor_delete(editor_state_t* s);
 
 static void editor_update(editor_state_t* s);
 
 static void editor_draw(editor_state_t* s);
-static void editor_draw_edit_area(editor_state_t* s);
 static void editor_draw_tilemap(editor_state_t* s);
 
 static struct nk_context* ctx = NULL;
@@ -63,39 +58,13 @@ static void editor_init(editor_state_t* s)
     s->tile_w = SR_TILE_W;
     s->tile_h = SR_TILE_H;
 
-/*    const int left_panel_width = (int)(s->window_w * 0.1f);
-    const int right_panel_width = (int)(left_panel_width * 1.3f);
-    const int top_panel_height = (int)(s->window_h * 0.05f);
-
-    s->edit_area.right = (int)(s->window_w * 0.15f);
-    s->edit_area.bottom = (int)(s->window_h * 0.2f);
-    s->edit_area.top = (int)(s->window_h * 0.15f);
-    s->edit_area.left = (int)(left_panel_width * 1.05f + UI_PADDING);
-
-    s->tileset_panel.right = s->window_w - left_panel_width;
-    s->tileset_panel.left = UI_PADDING;
-    s->tileset_panel.bottom = (int)(s->window_h * 0.02f);
-    s->tileset_panel.top = top_panel_height + UI_PADDING;
-
-    s->menu_panel.left = UI_PADDING;
-    s->menu_panel.right = UI_PADDING;
-    s->menu_panel.top = UI_PADDING;
-    s->menu_panel.bottom = s->window_h - top_panel_height;
-
-    s->right_panel.left = (int)(s->window_w - right_panel_width);
-    s->right_panel.right = UI_PADDING;
-    s->right_panel.bottom = UI_PADDING;
-    s->right_panel.top = top_panel_height + UI_PADDING; */
-
 	s->bg_color.r = 20;
     s->bg_color.g = 20;
     s->bg_color.b = 20;
     s->bg_color.a = 255;
 
 	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 48, NULL, 0);
-	s->nk_title_font = nk_raylib_create_user_font(&(s->font), 24);
-    s->nk_menu_font = nk_raylib_create_user_font(&(s->font), 20);
-    s->nk_inner_font = nk_raylib_create_user_font(&(s->font), 20);
+    s->nk_font = nk_raylib_create_user_font(&(s->font), 20);
 
 //    editor_load_tileset(s, ASSETS_PATH"tileset.json");
 
@@ -103,15 +72,8 @@ static void editor_init(editor_state_t* s)
 
     tilemap_create(&(s->tilemap), 64, 64);
 
-    Rectangle edit_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
-    s->cursor_x = (int)(edit_rect.x / s->tile_w) + 1;
-    s->cursor_y = (int)(edit_rect.y / s->tile_h) + 1;
-
-//    s->camera_x = -(s->edit_area.left + s->tile_w);
-//    s->camera_y = -(s->edit_area.top + s->tile_h);
-
     ctx = &(s->nk_ctx);
-	nk_init_default(ctx, &(s->nk_title_font));
+	nk_init_default(ctx, &(s->nk_font));
 
     editor_open_map(s, "C:/Users/admin/source/repos/hidden-gem/assets/map.hgm");
 }
@@ -144,7 +106,6 @@ static void editor_update(editor_state_t* s)
     }
     s->prev_mouse_pos = (Vector2){(float)mouseX, (float)mouseY};
 
-//    editor_update_ui(s);
 //    editor_update_camera(s);
 //    editor_update_cursor(s);
 }
@@ -163,8 +124,6 @@ static void editor_draw(editor_state_t* s)
 //        editor_draw_cursor(s);
     }
 
-//    editor_draw_ui(s);
-
     EndTextureMode();
 
     Rectangle dst = {
@@ -179,24 +138,6 @@ static void editor_draw(editor_state_t* s)
     EndDrawing();
 
     nk_clear(ctx);
-}
-
-static void editor_draw_edit_area(editor_state_t* s)
-{
-    Rectangle edit_area_rect = panel_layout_get_rect(&(s->edit_area), s->window_w, s->window_h, 4);
-
-    DrawRectangleLinesEx(edit_area_rect, 4, BLACK);
-
-    DrawRectangle(0, 0, (int)(edit_area_rect.x), s->window_h, s->bg_color);
-    DrawRectangle(0, 0, s->window_w, (int)(edit_area_rect.y), s->bg_color);
-
-    DrawRectangle((int)(edit_area_rect.x + edit_area_rect.width), 0,
-                (int)(s->window_w - edit_area_rect.x), s->window_h,
-                s->bg_color);
-
-    DrawRectangle(0, (int)(edit_area_rect.y + edit_area_rect.height),
-                s->window_w, (int)(s->window_h - edit_area_rect.height),
-                s->bg_color);
 }
 
 static void editor_draw_tilemap(editor_state_t* s)
