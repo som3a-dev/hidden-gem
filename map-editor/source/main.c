@@ -10,7 +10,6 @@
 #include <stdio.h>
 
 static void init_crtdbg();
-static void dump_crtdbg();
 
 int main(void)
 {
@@ -24,10 +23,6 @@ int main(void)
 
     log_close();
 
-    #ifdef _DEBUG
-	dump_crtdbg();
-    #endif
-
 	return 0;
 }
 
@@ -40,9 +35,4 @@ static void init_crtdbg()
     _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_FILE );
     _CrtSetReportFile( _CRT_ASSERT, _CRTDBG_FILE_STDOUT );
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-}
-
-static void dump_crtdbg()
-{
-	_CrtDumpMemoryLeaks();
 }
