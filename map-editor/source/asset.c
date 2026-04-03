@@ -37,7 +37,7 @@ static int add_texture(const char* path)
     uint32_t index = hash(path) % textures_capacity;
 
     texture_entry_t* e = textures + index;
-    assert(e);
+    
     if (e->used == false)
     {
         strcpy(e->path, path);
@@ -86,13 +86,14 @@ void asset_load_texture(const char* path)
         {
             texture_entry_t* e = old_table + i;
 
-            assert(e);
             if (e->used)
             {
-                uint32_t index = hash(e->path);
+                uint32_t index = hash(e->path) % textures_capacity;
                 textures[index] = *e;
             }
         }
+
+        free(old_table);
 
         add_texture(path);
     }
@@ -105,7 +106,7 @@ Texture* asset_get_texture(const char* path)
     uint32_t index = hash(path) % textures_capacity;
 
     texture_entry_t* e = textures + index;
-    assert(e);
+
     if ((e->used) && (strcmp(path, e->path) == 0))
     {
         return &(e->texture);
@@ -115,7 +116,6 @@ Texture* asset_get_texture(const char* path)
         for (int i = index+1; i < textures_capacity; i++)
         {
             e = textures + i;
-            assert(e);
             if ((e->used) && (strcmp(path, e->path) == 0))
             {
                 return &(e->texture);
@@ -131,7 +131,7 @@ void asset_delete_assets()
     for (int i = 0; i < textures_capacity; i++)
     {
         texture_entry_t* e = textures + i;
-        assert(e);
+        
         if (e->used)
         {
             UnloadTexture(e->texture);

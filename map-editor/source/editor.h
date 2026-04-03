@@ -19,6 +19,7 @@ typedef struct
     int window_h;
 
     sr_scene_draw_buffer scene;
+    Rectangle scene_dst;
 
     struct nk_context nk_ctx;
 
@@ -53,5 +54,7 @@ void run_editor();
 void editor_load_tileset(editor_state_t* s, const char* filepath);
 void editor_open_map(editor_state_t* s, const char* filepath);
 void editor_save_map(editor_state_t* s, const char* filepath);
+
+Vector2 editor_get_logical_mouse_pos(editor_state_t* s);
 
 #endif

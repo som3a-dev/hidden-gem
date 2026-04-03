@@ -55,6 +55,15 @@ static void editor_init(editor_state_t* s)
 
     s->scene = sr_create_draw_buffer();
 
+    const float scale = 1.5f;
+    s->scene_dst = (Rectangle){
+        0, 0,
+        (float)s->scene.w * scale, (float)s->scene.h * scale
+    };
+
+    s->scene_dst.x =  (s->window_w - s->scene_dst.width) * 0.3f;
+    s->scene_dst.y =  (s->window_h - s->scene_dst.height) * 0.4f;
+
     s->tile_w = SR_TILE_W;
     s->tile_h = SR_TILE_H;
 
@@ -64,13 +73,14 @@ static void editor_init(editor_state_t* s)
     s->bg_color.a = 255;
 
 	s->font = LoadFontEx(ASSETS_PATH"DroidSans.ttf", 48, NULL, 0);
-    s->nk_font = nk_raylib_create_user_font(&(s->font), 20);
-
-//    editor_load_tileset(s, ASSETS_PATH"tileset.json");
-
-    s->selected_tile_id = 1;
+    s->nk_font = nk_raylib_create_user_font(&(s->font), 28);
 
     tilemap_create(&(s->tilemap), 64, 64);
+
+    s->camera_x = 0;
+    s->camera_y = 0;
+
+    s->selected_tile_id = 4;
 
     ctx = &(s->nk_ctx);
 	nk_init_default(ctx, &(s->nk_font));
@@ -93,8 +103,8 @@ static void editor_delete(editor_state_t* s)
 
 static void editor_update(editor_state_t* s)
 {
-    const int mouseX = (int)((float)GetMouseX());
-    const int mouseY = (int)((float)GetMouseY());
+    int mouseX = (int)((float)GetMouseX());
+    int mouseY = (int)((float)GetMouseY());
 
     if ((mouseX != s->prev_mouse_pos.x) || (mouseY != s->prev_mouse_pos.y))
     {
@@ -106,34 +116,38 @@ static void editor_update(editor_state_t* s)
     }
     s->prev_mouse_pos = (Vector2){(float)mouseX, (float)mouseY};
 
-//    editor_update_camera(s);
-//    editor_update_cursor(s);
+    editor_update_cursor(s);
+
+    if (IsKeyDown(KEY_LEFT_CONTROL))
+    {
+        if (IsKeyPressed(KEY_S))
+        {
+            editor_save_map(s, "C:/Users/admin/source/repos/hidden-gem/assets/map.hgm");
+        }
+    }
+
+    editor_update_ui(s);
 }
 
 static void editor_draw(editor_state_t* s)
 {
     BeginDrawing();
-    ClearBackground(s->bg_color);
+    ClearBackground((Color){0x55, 0x55, 0x55});
 
     BeginTextureMode(s->scene.tex);
+    ClearBackground(s->bg_color);
 
     editor_draw_tilemap(s);
-//    editor_draw_edit_area(s);
     if (s->draw_cursor)
     {
-//        editor_draw_cursor(s);
+        editor_draw_cursor(s);
     }
 
     EndTextureMode();
 
-    Rectangle dst = {
-        0, 0,
-        (float)s->window_w, (float)s->window_h
-    };
+    sr_draw_scene(&(s->scene), s->scene_dst, WHITE);
 
-    sr_draw_scene(&(s->scene), dst, WHITE);
-
-    nk_raylib_draw_commands(ctx);
+    editor_draw_ui(s);
 
     EndDrawing();
 
@@ -201,30 +215,39 @@ static void editor_draw_tilemap(editor_state_t* s)
 
 static char* get_dir_path(const char* filepath)
 {
-    int last_slash_index = -1;
+    // Used so we can unify all the slashes in the path
+    char* cpy = malloc(sizeof(char) * (strlen(filepath) + 1));
+    strcpy(cpy, filepath);
 
-    for (int i = 0; i < strlen(filepath); i++)
+    int last_slash_index = -1;
+    for (int i = 0; i < strlen(cpy); i++)
     {
-        if ((filepath[i] == '\\') || (filepath[i] == '/'))
+        if ((cpy[i] == '\\') || (cpy[i] == '/'))
         {
             last_slash_index = i;
+            cpy[i] = '/';
         }
     }
-    
-    assert(last_slash_index != -1);
+
+    if (last_slash_index == -1)
+    {
+        free(cpy);
+        return NULL;
+    }
 
     last_slash_index++; //include the last slash
 
     char* dirpath = malloc(sizeof(char) * (last_slash_index + 1));
-    memcpy(dirpath, filepath, sizeof(char) * last_slash_index);
+    memcpy(dirpath, cpy, sizeof(char) * last_slash_index);
     dirpath[last_slash_index] = '\0';
+
+    free(cpy);
 
     return dirpath;
 }
 
 void editor_load_tileset(editor_state_t* s, const char* filepath)
 {
-    (s);
     mf_tile_t* tiles;
     int tile_count;
     mf_load_tileset(filepath, &tiles, &tile_count);
@@ -323,4 +346,19 @@ void editor_save_map(editor_state_t* s, const char* filepath)
     mf_save_tilemap(filepath, &map);
 
     mf_tilemap_destroy(&map);
+}
+
+Vector2 editor_get_logical_mouse_pos(editor_state_t* s)
+{
+    Vector2 pos = GetMousePosition();
+    Vector2 scale = {
+        (float)(s->scene.w) / s->scene_dst.width,
+        (float)(s->scene.h) / s->scene_dst.height
+    };
+    pos.x -= s->scene_dst.x;
+    pos.y -= s->scene_dst.y;
+    pos.x *= scale.x;
+    pos.y *= scale.y;
+
+    return pos;
 }

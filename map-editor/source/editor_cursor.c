@@ -2,6 +2,7 @@
 #include "collision.h"
 
 #include <assert.h>
+#include <stdio.h>
 
 #define CURSOR_HELD_DELAY 300
 #define CURSOR_HELD_MOVE_TIME 30
@@ -29,7 +30,7 @@ static bool editor_update_cursor_pos(editor_state_t* s, int new_x, int new_y)
 
 static bool editor_is_mouse_in_tilemap(editor_state_t* s)
 {
-    Vector2 mouse_pos = GetMousePosition();
+    Vector2 mouse_pos = editor_get_logical_mouse_pos(s);
 
     int new_x  = (int)((mouse_pos.x + s->camera_x) / s->tile_w);
     int new_y  = (int)((mouse_pos.y + s->camera_y) / s->tile_h);
@@ -95,7 +96,7 @@ static void editor_update_cursor_tile(editor_state_t* s)
 
 static bool editor_update_cursor_mouse(editor_state_t* s)
 {
-    Vector2 mouse_pos = GetMousePosition();
+    Vector2 mouse_pos = editor_get_logical_mouse_pos(s);
 
     if (s->mouse_moved)
     {

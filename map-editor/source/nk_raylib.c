@@ -349,8 +349,6 @@ static Color nk_to_rl_color(struct nk_color color)
 
 static float nk_font_width_callback(nk_handle handle, float height, const char *text, int len)
 {
-    (void)len;
-    (void)height;
     Font* font = (Font*)(handle.ptr);
 	if (font == NULL) {
 		return 0;
