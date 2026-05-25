@@ -29,6 +29,11 @@ void FrameAnimation::push_frame_interval(int x1, int x2, int y1, int y2)
 
 void FrameAnimation::update()
 {
+    if (one_shot && is_done())
+    {
+        return;
+    }
+
     uint32_t time_ms = static_cast<uint32_t>(GetTime() * 1000);
 
     if ((time_ms - last_advance_time_ms) > interval_ms)
@@ -39,8 +44,17 @@ void FrameAnimation::update()
 
     if (frame_index >= frames.size())
     {
-        frame_index = 0;
+        if (!one_shot)
+        {
+            frame_index = 0;
+        }
+        else
+        {
+            frame_index = (int)(frames.size()-1);
+        }
     }
+
+    printf("%d\n", frame_index);
 }
 
 Rectangle FrameAnimation::get_current_frame_src() const

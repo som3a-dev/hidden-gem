@@ -19,6 +19,8 @@ struct FrameAnimation
     std::string id;
     std::vector<Frame> frames;
 
+    bool one_shot = false;
+
     // the time each frame lasts in ms
     uint32_t interval_ms = 0;
 
@@ -45,6 +47,11 @@ struct FrameAnimation
     inline int get_frame_height() const
     {
         return frame_height;
+    }
+
+    inline bool is_done() const
+    {
+        return frame_index == (frames.size()-1);
     }
 
     void update();
