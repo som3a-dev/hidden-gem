@@ -8,7 +8,13 @@ void FrameAnimation::set_sheet(const std::string& sheet_texture_id,
                 int sheet_height)
 {
     Texture2D* texture = asset_m.get_asset<Texture2D>(sheet_texture_id);
-    if (texture == nullptr) return;
+    if (texture == nullptr)
+    {
+        TraceLog(LOG_WARNING, "Setting animation sheet to '%s' failed. Sheet is not loaded.", sheet_texture_id.c_str());
+        // TODO(omar): Placeholder texture
+
+        return;
+    }
 
     frame_width  = texture->width / sheet_width;
     frame_height = texture->height / sheet_height;  
