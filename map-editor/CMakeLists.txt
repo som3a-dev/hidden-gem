@@ -32,7 +32,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_S
 #target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="./assets") # Set the asset path macro in release mode to a relative path that assumes the assets folder is in the same directory as the game executable
 
 if(MSVC)
-  target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
+  target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX /Wv:18)
   target_compile_options(nk_impl PRIVATE /W0)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 else()
