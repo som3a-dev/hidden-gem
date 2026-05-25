@@ -64,59 +64,67 @@ namespace GameplaySystems
                 collision->rect.height
             };
 
+            const float epsilon = 0.01f;
+
             entity_rect.x += movement->velocity.x * game.dt;
-            int collision_count = Collision::get_colliding_tiles(game, game.tilemap, entity_rect,
-                                           collision->_colliding_tiles.data(),
-                                           collision->_colliding_tiles.size());
-
-//            for (Rectangle& tile_rect : collision->_colliding_tiles)
-            for (int i = 0; i < collision_count; i++)
+            if (Collision::get_colliding_tiles(game, game.tilemap,
+                entity_rect, collision->_colliding_tiles.data(), collision->_colliding_tiles.size()))
             {
-                Rectangle& tile_rect = collision->_colliding_tiles[i];
+                Rectangle collider = collision->_colliding_tiles[0];
 
-                float tile_center_x = tile_rect.x + (tile_rect.width / 2);
-                float entity_center_x = entity_rect.x + (entity_rect.width / 2);
-
-                if (entity_center_x < tile_center_x)
+                if (movement->velocity.x > 0)
                 {
-                    transform->x = tile_rect.x - (entity_rect.width + collision->rect.x);
+                    transform->x = collider.x - entity_rect.width - collision->rect.x - epsilon;
                 }
-                else if (tile_center_x < entity_center_x)
+                else if (movement->velocity.x < 0)
                 {
-                    transform->x = tile_rect.x + tile_rect.width - collision->rect.x;
+                    transform->x = collider.x + collider.width - collision->rect.x + epsilon;
                 }
 
                 movement->velocity.x = 0;
-                break;
             }
 
-            entity_rect.x = transform->x + collision->rect.x; // Check the actual current x position, in case we snapped
+            entity_rect.x = transform->x + collision->rect.x; // get the new x
 
+            // Y check
             entity_rect.y += movement->velocity.y * game.dt;
-            collision_count = Collision::get_colliding_tiles(game, game.tilemap, entity_rect,
-                                           collision->_colliding_tiles.data(),
-                                           collision->_colliding_tiles.size());
-
-            collision->on_ground = false;
-            for (int i = 0; i < collision_count; i++)
+            if (Collision::get_colliding_tiles(game, game.tilemap,
+                entity_rect, collision->_colliding_tiles.data(), collision->_colliding_tiles.size()))
             {
-                Rectangle& tile_rect = collision->_colliding_tiles[i];
+                Rectangle collider = collision->_colliding_tiles[0];
 
-                float tile_center_y = tile_rect.y + (tile_rect.height / 2);
-                float entity_center_y = entity_rect.y + (entity_rect.height / 2);
-
-                if (tile_center_y < entity_center_y)
+                if (movement->velocity.y > 0)
                 {
-                    transform->y = tile_rect.y + tile_rect.height - collision->rect.y;
+                    transform->y = collider.y - entity_rect.height - collision->rect.y - epsilon;
                 }
-                else if (entity_center_y < tile_center_y)
+                else if (movement->velocity.y < 0)
                 {
-                    transform->y = tile_rect.y - (entity_rect.height + collision->rect.y);
-                    collision->on_ground = true;
+                    transform->y = collider.y + collider.height - collision->rect.y + epsilon;
                 }
 
                 movement->velocity.y = 0;
-                break;
+            }
+
+            entity_rect.y = transform->y + collision->rect.y;
+
+            // on ground check
+            const int foot_w_margin = 2;
+            const float foot_height = 1.0f;
+            Rectangle foot = {
+                entity_rect.x + foot_w_margin,
+                entity_rect.y + entity_rect.height,
+                entity_rect.width - foot_w_margin,
+                foot_height
+            };
+
+            if (Collision::get_colliding_tiles(game, game.tilemap,
+                foot, collision->_colliding_tiles.data(), collision->_colliding_tiles.size()))
+            {
+                collision->on_ground = true;
+            }
+            else
+            {
+                collision->on_ground = false;
             }
         }
     }
@@ -361,20 +369,6 @@ namespace GameplaySystems
             DrawableComponent* drawable = game.world.drawables.get_component(entity);
             if (drawable == nullptr) continue;
 
-            // Gravity
-            if (collision->on_ground == false)
-            {
-                movement->velocity.y += movement->gravity * game.dt;
-                if (movement->velocity.y > movement->gravity)
-                {
-                    movement->velocity.y = movement->gravity;
-                }
-            }
-            else
-            {
-                movement->velocity.y = 0;
-            }
-
             if (IsKeyDown(KEY_D))
             {
                 movement->velocity.x += player->accel * game.dt;
@@ -384,7 +378,10 @@ namespace GameplaySystems
                 }
 
                 drawable->flip_h = false;
-                animated_drawable->animation_id = "player-run";
+                if (collision->on_ground && (movement->velocity.y >= 0))
+                {
+                    animated_drawable->animation_id = "player-run";
+                }
             }
             else if (IsKeyDown(KEY_A))
             {
@@ -395,7 +392,11 @@ namespace GameplaySystems
                 }
 
                 drawable->flip_h = true;
-                animated_drawable->animation_id = "player-run";
+
+                if (collision->on_ground && (movement->velocity.y >= 0))
+                {
+                    animated_drawable->animation_id = "player-run";
+                }
             }
             else
             {
@@ -411,17 +412,27 @@ namespace GameplaySystems
                     if (movement->velocity.x > 0) movement->velocity.x = 0;
                 }
 
-                animated_drawable->animation_id = "player-idle";
+                if (collision->on_ground && (movement->velocity.y >= 0))
+                {
+                    animated_drawable->animation_id = "player-idle";
+                }
             }
 
             if (IsKeyPressed(KEY_SPACE))
             {
                 movement->velocity.y = -(player->jump_force);
+
+                animated_drawable->animation_id = "player-jump";
             }
 
-            if (!collision->on_ground) 
+            if (collision->on_ground == false)
             {
-                animated_drawable->animation_id = "player-jump";
+                // Gravity
+                movement->velocity.y += movement->gravity * game.dt;
+                if (movement->velocity.y > movement->gravity)
+                {
+                    movement->velocity.y = movement->gravity;
+                }
             }
         }
     }
