@@ -68,8 +68,9 @@ void Game::create_player(float x, float y)
     {
         anim.frames.clear();
         anim.set_sheet(jump, asset_m, 6, 1);
-        anim.push_frame_interval(0, 10, 0, 0);
-        anim.interval_ms = 50;
+        anim.push_frame_interval(0, 5, 0, 0);
+        anim.interval_ms = 70;
+        anim.one_shot = true;
 
         asset_m.load_frame_animation("player-jump", anim);
 
