@@ -26,6 +26,8 @@ namespace GameplaySystems
     void draw_ui_system(Game& game);
 
     void player_system(Game& game);
+
+    void player_dash_timer_callback(void* player, void* user_data);
 };
 
 #endif

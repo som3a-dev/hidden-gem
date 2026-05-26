@@ -1,4 +1,5 @@
 #include "game.h"
+#include "gameplay_systems.h"
 
 void Game::create_player(float x, float y)
 {
@@ -29,6 +30,7 @@ void Game::create_player(float x, float y)
     const char* walk = ASSETS_PATH"male_hero_free/anims/male_hero-walk.png";
     const char* run = ASSETS_PATH"male_hero_free/anims/male_hero-run.png";
     const char* jump = ASSETS_PATH"male_hero_free/anims/male_hero-jump.png";
+    const char* dash = ASSETS_PATH"male_hero_free/anims/male_hero-dash.png";
 
     FrameAnimation anim;
 
@@ -38,7 +40,8 @@ void Game::create_player(float x, float y)
     const int sprite_offset_w = 53;
     const int sprite_offset_h = 48;
     {
-        anim.frames.clear();
+        anim = FrameAnimation();
+
         anim.set_sheet(idle, asset_m, 10, 1);
         anim.push_frame_interval(0, 10, 0, 0);
         anim.interval_ms = 60;
@@ -52,33 +55,33 @@ void Game::create_player(float x, float y)
         };
     }
     {
-        anim.frames.clear();
+        anim = FrameAnimation();
+
         anim.set_sheet(run, asset_m, 10, 1);
         anim.push_frame_interval(0, 10, 0, 0);
         anim.interval_ms = 50;
 
         asset_m.load_frame_animation("player-run", anim);
-
-        collision.rect = {
-            sprite_offset_x, sprite_offset_y,
-            (float)(anim.get_frame_width() - sprite_offset_w * 2) * drawable.scale,
-            (float)(anim.get_frame_height() - sprite_offset_h * 2) * drawable.scale
-        };
     }
     {
-        anim.frames.clear();
+        anim = FrameAnimation();
+
         anim.set_sheet(jump, asset_m, 6, 1);
         anim.push_frame_interval(0, 5, 0, 0);
         anim.interval_ms = 70;
         anim.one_shot = true;
 
         asset_m.load_frame_animation("player-jump", anim);
+    }
+    {
+        anim = FrameAnimation();
 
-        collision.rect = {
-            sprite_offset_x, sprite_offset_y,
-            (float)(anim.get_frame_width() - sprite_offset_w * 2) * drawable.scale,
-            (float)(anim.get_frame_height() - sprite_offset_h * 2) * drawable.scale
-        };
+        anim.set_sheet(dash, asset_m, 5, 1);
+        anim.push_frame_interval(0, 4, 0, 0);
+        anim.interval_ms = 70;
+        anim.one_shot = true;
+
+        asset_m.load_frame_animation("player-dash", anim);
     }
 
     ECS::TransformComponent transform = {x, y};
@@ -97,8 +100,10 @@ void Game::create_player(float x, float y)
 
     ECS::PlayerComponent player_component;
     player_component.accel = movement.speed * 2.5f;
-    player_component.friction = movement.speed * 6;
+    player_component.friction = movement.speed * 8;
     player_component.jump_force = 300.0f;
+    player_component.dash_timer.duration_ms = 300;
+    player_component.dash_timer.on_timeout = GameplaySystems::player_dash_timer_callback;
 
     player = world.create_entity();
     world.transforms.add_component(player, std::move(transform));

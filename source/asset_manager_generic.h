@@ -1,5 +1,7 @@
 #include "asset_manager.h"
 
+#include <assert.h>
+
 template<typename T>
 AssetManager::Table<T>::~Table()
 {
@@ -82,13 +84,13 @@ bool AssetManager::Table<T>::add_asset(const TableEntry<T>& asset)
         {
             return true;
         }
+
+        return false;
     }
     else
     {
         return true;
     }
-
-    return false;
 }
 
 template<typename T>

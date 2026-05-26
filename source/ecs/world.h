@@ -7,6 +7,7 @@
 
 #include "raylib.h"
 #include "sparse_set.h"
+#include "../timer.h"
 #include "../frame_animation.h"
 
 #define ENTITY_INVALID -1
@@ -70,11 +71,19 @@ namespace ECS
                                        // this is what is used to draw
     };
 
+    enum PlayerState 
+    {
+        DASH = 1
+    };
+
     struct PlayerComponent
     {
         float accel = 0;
         float friction = 0;
         float jump_force = 0;
+
+        int state = 0;
+        Timer dash_timer;
     };
 
     struct InteractableComponent

@@ -59,8 +59,6 @@ void FrameAnimation::update()
             frame_index = (int)(frames.size()-1);
         }
     }
-
-    printf("%d\n", frame_index);
 }
 
 Rectangle FrameAnimation::get_current_frame_src() const

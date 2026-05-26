@@ -44,6 +44,7 @@ void Game::init()
     asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-walk.png");
     asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-run.png");
     asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-jump.png");
+    asset_m.load_texture(ASSETS_PATH"male_hero_free/anims/male_hero-dash.png");
 
     FrameAnimation anim;
     anim.set_sheet(ASSETS_PATH"torch.png", asset_m, 4, 2);

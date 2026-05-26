@@ -347,6 +347,16 @@ namespace GameplaySystems
         }
     }
 
+    void player_dash_timer_callback(void* player, void* user_data)
+    {
+        assert(player);
+
+        PlayerComponent* comp = (PlayerComponent*)player;
+        printf("timer done\n");
+
+        comp->state &= ~PlayerState::DASH;
+    }
+
     void player_system(Game& game)
     {
         for (int entity : game.world.players.entities)
@@ -369,12 +379,17 @@ namespace GameplaySystems
             DrawableComponent* drawable = game.world.drawables.get_component(entity);
             if (drawable == nullptr) continue;
 
+            player->dash_timer.update();
+
             if (IsKeyDown(KEY_D))
             {
-                movement->velocity.x += player->accel * game.dt;
-                if (movement->velocity.x > movement->speed)
+//                if (!(player->state & PlayerState::DASH))
                 {
-                    movement->velocity.x = movement->speed;
+                    if (movement->velocity.x < movement->speed)
+                    {
+                        movement->velocity.x += player->accel * game.dt;
+//                        movement->velocity.x = movement->speed;
+                    }
                 }
 
                 drawable->flip_h = false;
@@ -385,10 +400,13 @@ namespace GameplaySystems
             }
             else if (IsKeyDown(KEY_A))
             {
-                movement->velocity.x -= player->accel * game.dt;
-                if (movement->velocity.x < -(movement->speed))
+                //if (!(player->state & PlayerState::DASH))
                 {
-                    movement->velocity.x = -(movement->speed);
+                    if (movement->velocity.x > -(movement->speed))
+                    {
+                        movement->velocity.x -= player->accel * game.dt;
+//                        movement->velocity.x = -(movement->speed);
+                    }
                 }
 
                 drawable->flip_h = true;
@@ -398,31 +416,62 @@ namespace GameplaySystems
                     animated_drawable->animation_id = "player-run";
                 }
             }
-            else
+            else if (collision->on_ground && (movement->velocity.y >= 0))
+            {
+                animated_drawable->animation_id = "player-idle";
+            }
+
+            if ((!IsKeyDown(KEY_A) && !IsKeyDown(KEY_D)) || (movement->velocity.x > movement->speed) || (movement->velocity.x < -(movement->speed)))
             {
                 if (movement->velocity.x > 0)
                 {
-                    movement->velocity.x -= player->friction * game.dt;
+                    float friction = player->friction;
+                    if (movement->velocity.x > movement->speed)
+                    {
+                        friction *= 1.5f;
+                    }
+
+                    movement->velocity.x -= friction * game.dt;
                     if (movement->velocity.x < 0) movement->velocity.x = 0;
                 }
 
                 else if (movement->velocity.x < 0)
                 {
-                    movement->velocity.x += player->friction * game.dt;
-                    if (movement->velocity.x > 0) movement->velocity.x = 0;
-                }
+                    float friction = player->friction;
+                    if (movement->velocity.x < -(movement->speed))
+                    {
+                        friction *= 1.5f;
+                    }
 
-                if (collision->on_ground && (movement->velocity.y >= 0))
-                {
-                    animated_drawable->animation_id = "player-idle";
+                    movement->velocity.x += friction * game.dt;
+                    if (movement->velocity.x > 0) movement->velocity.x = 0;
                 }
             }
 
             if (IsKeyPressed(KEY_SPACE))
             {
                 movement->velocity.y = -(player->jump_force);
-
                 animated_drawable->animation_id = "player-jump";
+            }
+            if (IsKeyPressed(KEY_RIGHT))
+            {
+                animated_drawable->animation_id = "player-dash";
+                drawable->flip_h = false;
+                movement->velocity.x = 540;
+                player->state |= PlayerState::DASH; 
+
+                player->dash_timer.parent = (void*)player;
+                player->dash_timer.start();
+            }
+            else if (IsKeyPressed(KEY_LEFT))
+            {
+                animated_drawable->animation_id = "player-dash";
+                drawable->flip_h = true;
+                movement->velocity.x = -540;
+                player->state |= PlayerState::DASH; 
+
+                player->dash_timer.parent = (void*)player;
+                player->dash_timer.start();
             }
 
             if (collision->on_ground == false)
@@ -433,6 +482,11 @@ namespace GameplaySystems
                 {
                     movement->velocity.y = movement->gravity;
                 }
+            }
+
+            if (player->state & PlayerState::DASH)
+            {
+                movement->velocity.y = 0;
             }
         }
     }
